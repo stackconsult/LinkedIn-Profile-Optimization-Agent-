@@ -3,6 +3,8 @@ Vision engine for extracting LinkedIn profile data from screenshots
 """
 
 import json
+import time
+import re
 import base64
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
@@ -41,7 +43,7 @@ class VisionEngine:
     def _create_vision_prompt(self) -> str:
         """Create the prompt for vision model"""
         return """
-        Please transcribe all visible LinkedIn profile text from these screenshots into structured JSON.
+        Extract LinkedIn profile information from these screenshots. 
         
         Extract the following sections:
         1. Headline - the main professional title under the name
@@ -49,12 +51,14 @@ class VisionEngine:
         3. Experience - list of work experiences with title, company, dates, and description for each
         4. Skills - list of skills shown
         
-        Requirements:
-        - Return ONLY valid JSON, no other text
+        CRITICAL REQUIREMENTS:
+        - Return ONLY valid JSON - no explanations, no markdown, no extra text
+        - Escape all quotes inside text fields with backslashes (\\")
         - Do not invent information - only transcribe what's visible
         - If a section is not visible, use empty string for text fields or empty list for arrays
         - Normalize text formatting but preserve all content
         - Include all experience entries that are visible
+        - Handle special characters properly - newlines should be \\n, quotes should be \\"
         
         Use this exact JSON structure:
         {
@@ -70,6 +74,8 @@ class VisionEngine:
             ],
             "skills": ["...", "..."]
         }
+        
+        IMPORTANT: Your entire response must be valid JSON that can be parsed directly.
         """
     
     def _prepare_messages(self, base64_images: List[str]) -> List[Dict[str, Any]]:
@@ -103,20 +109,49 @@ class VisionEngine:
         try:
             # Clean up the response text in case there's any extra formatting
             response_text = response_text.strip()
+            
+            # Remove markdown code blocks
             if response_text.startswith('```json'):
                 response_text = response_text[7:]
+            if response_text.startswith('```'):
+                response_text = response_text[3:]
             if response_text.endswith('```'):
                 response_text = response_text[:-3]
             response_text = response_text.strip()
             
-            # Parse JSON
-            data = json.loads(response_text)
+            # Try to extract JSON if there's extra text
+            import re
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                response_text = json_match.group(0)
+            
+            # Fix common JSON issues from OCR text
+            # Replace unescaped quotes in text fields
+            response_text = re.sub(r'(?<!\\)"(?=[^,\[\]\{\}]*[^,\[\]\{\}])', r'\\"', response_text)
+            
+            # Remove or replace problematic characters
+            response_text = response_text.replace('\n', '\\n').replace('\r', '\\r')
+            
+            # Parse JSON with more robust error handling
+            try:
+                data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                # Try to fix common JSON issues
+                # Remove trailing commas
+                response_text = re.sub(r',\s*([}\]])', r'\1', response_text)
+                # Fix quotes
+                response_text = re.sub(r'(?<!\\)"(?=[^,\[\]\{\}]*[^,\[\]\{\}])', r'\\"', response_text)
+                
+                data = json.loads(response_text)
             
             # Validate and create profile object
             profile = LinkedInProfile(**data)
             return profile
             
         except json.JSONDecodeError as e:
+            # Log the problematic response for debugging
+            print(f"JSON parsing error: {e}")
+            print(f"Response text: {response_text[:500]}...")
             raise ValueError(f"Failed to parse JSON response: {e}")
         except Exception as e:
             raise ValueError(f"Error processing vision response: {e}")
@@ -147,24 +182,44 @@ class VisionEngine:
             # Prepare API call
             messages = self._prepare_messages(base64_images)
             
-            # Call vision model
-            response = self.client.chat.completions.create(
-                model=Config.GPT4O_VISION_MODEL_ID,
-                messages=messages,
-                max_tokens=2000,
-                temperature=0.1
-            )
+            # Call vision model with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    response = self.client.chat.completions.create(
+                        model=Config.GPT4O_VISION_MODEL_ID,
+                        messages=messages,
+                        max_tokens=2000,
+                        temperature=0.1
+                    )
+                    break
+                except Exception as api_error:
+                    if attempt == max_retries - 1:
+                        raise api_error
+                    time.sleep(2 ** attempt)  # Exponential backoff
             
             # Extract and parse response
             response_text = response.choices[0].message.content
             if not response_text:
                 raise ValueError("Empty response from vision model")
             
+            # Log the raw response for debugging
+            print(f"Raw vision response: {response_text[:200]}...")
+            
             profile = self._parse_response(response_text)
             return profile
             
         except Exception as e:
-            raise RuntimeError(f"Vision extraction failed: {str(e)}")
+            # Add more context to the error
+            error_msg = f"Vision extraction failed: {str(e)}"
+            if "JSON" in str(e):
+                error_msg += " - The vision model had trouble parsing the LinkedIn screenshots. Please try with clearer images."
+            elif "rate limit" in str(e).lower():
+                error_msg += " - Rate limit exceeded. Please wait a moment and try again."
+            elif "timeout" in str(e).lower():
+                error_msg += " - Request timed out. Please try with smaller or fewer images."
+            
+            raise RuntimeError(error_msg)
     
     def validate_extraction(self, profile: LinkedInProfile) -> Dict[str, Any]:
         """
