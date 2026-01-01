@@ -7,14 +7,11 @@ based on best practices for attracting clients or job opportunities.
 import streamlit as st
 import os
 from typing import Dict, List, Optional
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-
-# Configure OpenAI API
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Page configuration
 st.set_page_config(
@@ -66,12 +63,13 @@ st.markdown("""
 class LinkedInOptimizer:
     """Main class for LinkedIn profile optimization"""
     
-    def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY")
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.client = OpenAI(api_key=self.api_key) if self.api_key else None
     
     def analyze_headline(self, headline: str, target: str) -> Dict:
         """Analyze LinkedIn headline and provide recommendations"""
-        if not self.api_key:
+        if not self.client:
             return {
                 "score": 0,
                 "feedback": "Please configure your OpenAI API key in the environment variables.",
@@ -79,7 +77,7 @@ class LinkedInOptimizer:
             }
         
         try:
-            response = openai.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {
@@ -107,7 +105,7 @@ class LinkedInOptimizer:
     
     def analyze_about_section(self, about: str, target: str) -> Dict:
         """Analyze LinkedIn About section and provide recommendations"""
-        if not self.api_key:
+        if not self.client:
             return {
                 "score": 0,
                 "feedback": "Please configure your OpenAI API key in the environment variables.",
@@ -115,7 +113,7 @@ class LinkedInOptimizer:
             }
         
         try:
-            response = openai.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {
@@ -182,6 +180,10 @@ class LinkedInOptimizer:
 def main():
     """Main application function"""
     
+    # Initialize session state for API key
+    if 'api_key' not in st.session_state:
+        st.session_state.api_key = os.getenv("OPENAI_API_KEY", "")
+    
     # Header
     st.markdown('<div class="main-header">💼 LinkedIn Profile Optimizer</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Analyze and optimize your LinkedIn profile based on best practices</div>', unsafe_allow_html=True)
@@ -191,15 +193,18 @@ def main():
         st.header("⚙️ Configuration")
         
         # API Key input
-        api_key = st.text_input(
+        api_key_input = st.text_input(
             "OpenAI API Key",
             type="password",
-            value=os.getenv("OPENAI_API_KEY", ""),
+            value=st.session_state.api_key,
             help="Enter your OpenAI API key to enable AI-powered analysis"
         )
         
-        if api_key:
-            os.environ["OPENAI_API_KEY"] = api_key
+        # Update session state if API key changed
+        if api_key_input != st.session_state.api_key:
+            st.session_state.api_key = api_key_input
+        
+        if st.session_state.api_key:
             st.success("✅ API Key configured")
         else:
             st.warning("⚠️ Please enter your OpenAI API Key")
@@ -229,8 +234,8 @@ def main():
             "personalized recommendations to help you achieve your professional goals."
         )
     
-    # Main content
-    optimizer = LinkedInOptimizer()
+    # Main content - Create optimizer with API key from session state
+    optimizer = LinkedInOptimizer(api_key=st.session_state.api_key)
     
     # Tabs for different sections
     tab1, tab2, tab3 = st.tabs(["📝 Headline", "👤 About Section", "📊 Overall Score"])
