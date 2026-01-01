@@ -302,9 +302,10 @@ def render_main_interface():
         st.info(f"Uploaded {len(uploaded_files)} file(s)")
         
         # Display image previews
-        cols = st.columns(min(4, len(uploaded_files)))
+        num_cols = min(4, len(uploaded_files))
+        cols = st.columns(num_cols)
         for i, file in enumerate(uploaded_files):
-            with cols[i]:
+            with cols[i % num_cols]:  # Use modulo to prevent index out of range
                 st.image(file, caption=file.name, use_column_width=True)
         
         # Analyze Button
