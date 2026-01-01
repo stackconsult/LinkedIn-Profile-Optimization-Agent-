@@ -42,41 +42,28 @@ class VisionEngine:
     
     def _create_vision_prompt(self) -> str:
         """Create the prompt for vision model"""
-        return """
-        Extract LinkedIn profile information from these screenshots. 
-        
-        Extract the following sections:
-        1. Headline - the main professional title under the name
-        2. About - the summary section
-        3. Experience - list of work experiences with title, company, dates, and description for each
-        4. Skills - list of skills shown
-        
-        CRITICAL REQUIREMENTS:
-        - Return ONLY valid JSON - no explanations, no markdown, no extra text
-        - Escape all quotes inside text fields with backslashes (\\")
-        - Do not invent information - only transcribe what's visible
-        - If a section is not visible, use empty string for text fields or empty list for arrays
-        - Normalize text formatting but preserve all content
-        - Include all experience entries that are visible
-        - Handle special characters properly - newlines should be \\n, quotes should be \\"
-        
-        Use this exact JSON structure:
+        return """You are extracting LinkedIn profile data from screenshots. Return ONLY a JSON object with this exact structure:
+
+{
+    "headline": "professional title here",
+    "about": "summary text here",
+    "experience": [
         {
-            "headline": "...",
-            "about": "...",
-            "experience": [
-                {
-                    "title": "...",
-                    "company": "...",
-                    "dates": "...",
-                    "description": "..."
-                }
-            ],
-            "skills": ["...", "..."]
+            "title": "job title",
+            "company": "company name", 
+            "dates": "employment dates",
+            "description": "job description"
         }
-        
-        IMPORTANT: Your entire response must be valid JSON that can be parsed directly.
-        """
+    ],
+    "skills": ["skill1", "skill2"]
+}
+
+CRITICAL: 
+- Return ONLY the JSON object - no explanations, no markdown, no extra text
+- If information is not visible, use empty strings "" or empty arrays []
+- Escape quotes in text with backslash: \\"
+- Do not invent information - only transcribe what you see
+"""
     
     def _prepare_messages(self, base64_images: List[str]) -> List[Dict[str, Any]]:
         """Prepare messages for the vision API call"""
@@ -107,8 +94,19 @@ class VisionEngine:
     def _parse_response(self, response_text: str) -> LinkedInProfile:
         """Parse the vision model response into a structured profile"""
         try:
+            print(f"Raw response received: {response_text[:300]}...")
+            
             # Clean up the response text in case there's any extra formatting
             response_text = response_text.strip()
+            
+            # Remove any introductory text before JSON
+            if not response_text.startswith('{'):
+                # Look for the start of JSON
+                json_start = response_text.find('{')
+                if json_start != -1:
+                    response_text = response_text[json_start:]
+                else:
+                    raise ValueError("No JSON found in response")
             
             # Remove markdown code blocks
             if response_text.startswith('```json'):
@@ -119,42 +117,85 @@ class VisionEngine:
                 response_text = response_text[:-3]
             response_text = response_text.strip()
             
-            # Try to extract JSON if there's extra text
-            import re
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(0)
+            # Find the complete JSON object
+            brace_count = 0
+            json_end = -1
+            for i, char in enumerate(response_text):
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        json_end = i + 1
+                        break
+            
+            if json_end != -1:
+                response_text = response_text[:json_end]
+            
+            # Basic JSON validation before parsing
+            if not response_text.startswith('{') or not response_text.endswith('}'):
+                raise ValueError("Response doesn't appear to be valid JSON")
             
             # Fix common JSON issues from OCR text
-            # Replace unescaped quotes in text fields
-            response_text = re.sub(r'(?<!\\)"(?=[^,\[\]\{\}]*[^,\[\]\{\}])', r'\\"', response_text)
+            # Remove trailing commas
+            response_text = re.sub(r',\s*([}\]])', r'\1', response_text)
             
-            # Remove or replace problematic characters
+            # Handle unescaped quotes in text fields more carefully
+            # This is a complex regex to escape quotes that are inside JSON string values
+            response_text = re.sub(r'(?<=:\s*"[^"]*)"(?=[^"]*")', r'\\"', response_text)
+            
+            # Replace problematic characters
             response_text = response_text.replace('\n', '\\n').replace('\r', '\\r')
             
-            # Parse JSON with more robust error handling
+            print(f"Cleaned JSON: {response_text[:300]}...")
+            
+            # Parse JSON with multiple fallback attempts
             try:
                 data = json.loads(response_text)
             except json.JSONDecodeError as e:
-                # Try to fix common JSON issues
-                # Remove trailing commas
-                response_text = re.sub(r',\s*([}\]])', r'\1', response_text)
-                # Fix quotes
-                response_text = re.sub(r'(?<!\\)"(?=[^,\[\]\{\}]*[^,\[\]\{\}])', r'\\"', response_text)
+                print(f"First JSON parse failed: {e}")
                 
-                data = json.loads(response_text)
+                # Try more aggressive cleaning
+                # Escape any remaining unescaped quotes
+                response_text = re.sub(r'(?<!\\)"', r'\\"', response_text)
+                # Unescape the quotes that should be unescaped (JSON structure)
+                response_text = re.sub(r'\\"([{},\[\]:])', r'"\1', response_text)
+                
+                try:
+                    data = json.loads(response_text)
+                except json.JSONDecodeError as e2:
+                    print(f"Second JSON parse failed: {e2}")
+                    # Final attempt - create minimal valid structure
+                    try:
+                        # Extract what we can using a more lenient approach
+                        return self._create_fallback_profile(response_text)
+                    except Exception:
+                        raise ValueError(f"Failed to parse JSON after multiple attempts: {e2}")
             
             # Validate and create profile object
             profile = LinkedInProfile(**data)
             return profile
             
-        except json.JSONDecodeError as e:
-            # Log the problematic response for debugging
-            print(f"JSON parsing error: {e}")
+        except Exception as e:
+            print(f"Final parsing error: {e}")
             print(f"Response text: {response_text[:500]}...")
             raise ValueError(f"Failed to parse JSON response: {e}")
-        except Exception as e:
-            raise ValueError(f"Error processing vision response: {e}")
+    
+    def _create_fallback_profile(self, response_text: str) -> LinkedInProfile:
+        """Create a basic profile from malformed JSON response"""
+        # Extract basic information using regex
+        headline_match = re.search(r'"headline":\s*"([^"]*)"', response_text)
+        about_match = re.search(r'"about":\s*"([^"]*)"', response_text)
+        
+        headline = headline_match.group(1) if headline_match else ""
+        about = about_match.group(1) if about_match else ""
+        
+        return LinkedInProfile(
+            headline=headline,
+            about=about,
+            experience=[],
+            skills=[]
+        )
     
     def extract_profile_data(self, uploaded_files) -> LinkedInProfile:
         """
