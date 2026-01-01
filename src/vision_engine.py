@@ -136,13 +136,9 @@ CRITICAL:
             if not response_text.startswith('{') or not response_text.endswith('}'):
                 raise ValueError("Response doesn't appear to be valid JSON")
             
-            # Fix common JSON issues from OCR text
+            # Simple cleaning approach - avoid complex regex
             # Remove trailing commas
-            response_text = re.sub(r',\s*([}\]])', r'\1', response_text)
-            
-            # Handle unescaped quotes in text fields using simpler regex
-            # Replace quotes that are clearly inside string values
-            response_text = re.sub(r':\s*"([^"]*)"([^"]*)"([^"]*)"', r': "\1\\"\\2\\"\\3"', response_text)
+            response_text = response_text.replace(',}', '}').replace(',]', ']')
             
             # Replace problematic characters
             response_text = response_text.replace('\n', '\\n').replace('\r', '\\r')
@@ -155,30 +151,15 @@ CRITICAL:
             except json.JSONDecodeError as e:
                 print(f"First JSON parse failed: {e}")
                 
-                # Try more aggressive cleaning
-                # Simple quote escaping - escape quotes that are inside values
-                lines = response_text.split('\n')
-                cleaned_lines = []
-                for line in lines:
-                    if ':' in line and '"' in line:
-                        # This looks like a JSON key-value pair
-                        parts = line.split(':', 1)
-                        if len(parts) == 2:
-                            key = parts[0]
-                            value = parts[1]
-                            # Escape quotes in the value part
-                            value = value.replace('"', '\\"')
-                            line = f"{key}:{value}"
-                    cleaned_lines.append(line)
-                response_text = '\n'.join(cleaned_lines)
-                
+                # Try more aggressive cleaning - manual quote escaping
                 try:
-                    data = json.loads(response_text)
-                except json.JSONDecodeError as e2:
+                    # Simple approach: manually escape quotes in values
+                    cleaned_text = self._manual_quote_escape(response_text)
+                    data = json.loads(cleaned_text)
+                except Exception as e2:
                     print(f"Second JSON parse failed: {e2}")
                     # Final attempt - create minimal valid structure
                     try:
-                        # Extract what we can using a more lenient approach
                         return self._create_fallback_profile(response_text)
                     except Exception:
                         raise ValueError(f"Failed to parse JSON after multiple attempts: {e2}")
@@ -192,14 +173,70 @@ CRITICAL:
             print(f"Response text: {response_text[:500]}...")
             raise ValueError(f"Failed to parse JSON response: {e}")
     
+    def _manual_quote_escape(self, text: str) -> str:
+        """Manually escape quotes in JSON values - no regex"""
+        result = []
+        in_quotes = False
+        escape_next = False
+        
+        for i, char in enumerate(text):
+            if escape_next:
+                result.append(char)
+                escape_next = False
+                continue
+                
+            if char == '\\':
+                result.append(char)
+                escape_next = True
+                continue
+                
+            if char == '"' and not in_quotes:
+                # Opening quote for a key or value
+                result.append(char)
+                in_quotes = True
+            elif char == '"' and in_quotes:
+                # Closing quote - check if this is end of value or internal quote
+                # Look ahead to see if this is followed by a comma, brace, or bracket
+                next_chars = text[i+1:i+3].strip()
+                if next_chars.startswith(',') or next_chars.startswith('}') or next_chars.startswith(']') or i == len(text) - 1:
+                    # This is a closing quote
+                    result.append(char)
+                    in_quotes = False
+                else:
+                    # This is an internal quote that needs escaping
+                    result.append('\\"')
+            else:
+                result.append(char)
+        
+        return ''.join(result)
+    
     def _create_fallback_profile(self, response_text: str) -> LinkedInProfile:
         """Create a basic profile from malformed JSON response"""
-        # Extract basic information using simpler regex patterns
-        headline_match = re.search(r'"headline":\s*"([^"]*)"', response_text)
-        about_match = re.search(r'"about":\s*"([^"]*)"', response_text)
+        # Extract basic information using simple string methods
+        headline = ""
+        about = ""
         
-        headline = headline_match.group(1) if headline_match else ""
-        about = about_match.group(1) if about_match else ""
+        # Simple string search for headline
+        headline_start = response_text.find('"headline"')
+        if headline_start != -1:
+            value_start = response_text.find(':', headline_start)
+            if value_start != -1:
+                quote_start = response_text.find('"', value_start)
+                if quote_start != -1:
+                    quote_end = response_text.find('"', quote_start + 1)
+                    if quote_end != -1:
+                        headline = response_text[quote_start + 1:quote_end]
+        
+        # Simple string search for about
+        about_start = response_text.find('"about"')
+        if about_start != -1:
+            value_start = response_text.find(':', about_start)
+            if value_start != -1:
+                quote_start = response_text.find('"', value_start)
+                if quote_start != -1:
+                    quote_end = response_text.find('"', quote_start + 1)
+                    if quote_end != -1:
+                        about = response_text[quote_start + 1:quote_end]
         
         return LinkedInProfile(
             headline=headline,
