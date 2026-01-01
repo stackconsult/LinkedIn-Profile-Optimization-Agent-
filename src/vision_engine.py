@@ -140,9 +140,9 @@ CRITICAL:
             # Remove trailing commas
             response_text = re.sub(r',\s*([}\]])', r'\1', response_text)
             
-            # Handle unescaped quotes in text fields more carefully
-            # This is a complex regex to escape quotes that are inside JSON string values
-            response_text = re.sub(r'(?<=:\s*"[^"]*)"(?=[^"]*")', r'\\"', response_text)
+            # Handle unescaped quotes in text fields using simpler regex
+            # Replace quotes that are clearly inside string values
+            response_text = re.sub(r':\s*"([^"]*)"([^"]*)"([^"]*)"', r': "\1\\"\\2\\"\\3"', response_text)
             
             # Replace problematic characters
             response_text = response_text.replace('\n', '\\n').replace('\r', '\\r')
@@ -156,10 +156,21 @@ CRITICAL:
                 print(f"First JSON parse failed: {e}")
                 
                 # Try more aggressive cleaning
-                # Escape any remaining unescaped quotes
-                response_text = re.sub(r'(?<!\\)"', r'\\"', response_text)
-                # Unescape the quotes that should be unescaped (JSON structure)
-                response_text = re.sub(r'\\"([{},\[\]:])', r'"\1', response_text)
+                # Simple quote escaping - escape quotes that are inside values
+                lines = response_text.split('\n')
+                cleaned_lines = []
+                for line in lines:
+                    if ':' in line and '"' in line:
+                        # This looks like a JSON key-value pair
+                        parts = line.split(':', 1)
+                        if len(parts) == 2:
+                            key = parts[0]
+                            value = parts[1]
+                            # Escape quotes in the value part
+                            value = value.replace('"', '\\"')
+                            line = f"{key}:{value}"
+                    cleaned_lines.append(line)
+                response_text = '\n'.join(cleaned_lines)
                 
                 try:
                     data = json.loads(response_text)
@@ -183,7 +194,7 @@ CRITICAL:
     
     def _create_fallback_profile(self, response_text: str) -> LinkedInProfile:
         """Create a basic profile from malformed JSON response"""
-        # Extract basic information using regex
+        # Extract basic information using simpler regex patterns
         headline_match = re.search(r'"headline":\s*"([^"]*)"', response_text)
         about_match = re.search(r'"about":\s*"([^"]*)"', response_text)
         
