@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linkedin-profile-optimizer"
+version = "1.0.0"
+description = "A Streamlit application that analyzes and optimizes LinkedIn profiles"
+authors = [{name = "LinkedIn Optimizer Team"}]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "streamlit>=1.28.0",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "pandas>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/stackconsult/LinkedIn-Profile-Optimization-Agent-"
+Repository = "https://github.com/stackconsult/LinkedIn-Profile-Optimization-Agent-"
