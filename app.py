@@ -415,11 +415,14 @@ def render_upload_section():
                     
                     except ImportError as e:
                         st.error(f"❌ PDF analysis libraries not available: {e}")
-                        st.info("📧 Install required libraries: pip install PyPDF2 pdfplumber pytesseract PyMuPDF Pillow")
+                        st.info("📧 For PDF support, install: pip install PyPDF2 pdfplumber")
+                        st.info("📧 For OCR support, install: pip install pytesseract PyMuPDF Pillow")
+                        st.info("💡 You can still use image screenshots for profile analysis")
                     
                     except Exception as e:
                         st.error(f"❌ PDF analysis failed: {e}")
                         st.info("📧 Please ensure your PDF is a valid resume/profile document")
+                        st.info("💡 You can try using image screenshots instead")
     
     # Analysis button for images
     if uploaded_files:

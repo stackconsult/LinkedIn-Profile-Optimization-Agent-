@@ -8,22 +8,35 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 import json
 
-# PDF processing libraries
+# PDF processing libraries (optional)
 try:
     import PyPDF2
-    import pdfplumber
-    PDF_AVAILABLE = True
+    PDF_PYPDF2_AVAILABLE = True
 except ImportError:
-    PDF_AVAILABLE = False
+    PDF_PYPDF2_AVAILABLE = False
 
-# OCR libraries
+try:
+    import pdfplumber
+    PDF_PLUMBER_AVAILABLE = True
+except ImportError:
+    PDF_PLUMBER_AVAILABLE = False
+
+# OCR libraries (optional)
 try:
     import pytesseract
     from PIL import Image
-    import fitz  # PyMuPDF
-    OCR_AVAILABLE = True
+    OCR_PYTESSERACT_AVAILABLE = True
 except ImportError:
-    OCR_AVAILABLE = False
+    OCR_PYTESSERACT_AVAILABLE = False
+
+try:
+    import fitz  # PyMuPDF
+    OCR_FITZ_AVAILABLE = True
+except ImportError:
+    OCR_FITZ_AVAILABLE = False
+
+PDF_AVAILABLE = PDF_PYPDF2_AVAILABLE or PDF_PLUMBER_AVAILABLE
+OCR_AVAILABLE = OCR_PYTESSERACT_AVAILABLE and OCR_FITZ_AVAILABLE
 
 @dataclass
 class PDFProfileData:
@@ -73,7 +86,7 @@ class PDFProfileAnalyzer:
         """Complete PDF analysis with OCR and structure extraction"""
         
         if not PDF_AVAILABLE:
-            raise ImportError("PDF processing libraries not available. Install PyPDF2 and pdfplumber.")
+            raise ImportError("PDF processing libraries not available. Install PyPDF2 or pdfplumber: pip install PyPDF2 pdfplumber")
         
         # Extract text using multiple methods
         raw_text = self._extract_text_from_pdf(pdf_file)
@@ -83,7 +96,8 @@ class PDFProfileAnalyzer:
             if OCR_AVAILABLE:
                 raw_text = self._ocr_pdf(pdf_file)
             else:
-                raise ImportError("OCR libraries not available. Install pytesseract and PyMuPDF.")
+                # OCR not available, work with what we have
+                print("Warning: OCR libraries not available. Working with extracted text only.")
         
         # Structure the extracted text
         sections = self._extract_sections(raw_text)
@@ -99,7 +113,12 @@ class PDFProfileAnalyzer:
             'sections_found': list(sections.keys()),
             'experiences_count': len(experiences),
             'skills_count': len(skills),
-            'processing_method': 'ocr' if len(raw_text.strip()) < 500 else 'direct'
+            'processing_method': 'ocr' if len(raw_text.strip()) < 500 else 'direct',
+            'pdf_libraries': {
+                'pypdf2': PDF_PYPDF2_AVAILABLE,
+                'pdfplumber': PDF_PLUMBER_AVAILABLE,
+                'ocr_available': OCR_AVAILABLE
+            }
         }
         
         return PDFProfileData(
@@ -118,26 +137,31 @@ class PDFProfileAnalyzer:
         
         try:
             # Method 1: PyPDF2
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            for page in pdf_reader.pages:
-                text += page.extract_text() + "\n"
-        except:
-            pass
+            if PDF_PYPDF2_AVAILABLE:
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                for page in pdf_reader.pages:
+                    text += page.extract_text() + "\n"
+        except Exception as e:
+            print(f"PyPDF2 extraction failed: {e}")
         
         try:
             # Method 2: pdfplumber (more accurate)
-            pdf_file.seek(0)  # Reset file pointer
-            with pdfplumber.open(pdf_file) as pdf:
-                for page in pdf.pages:
-                    text += page.extract_text() + "\n"
-        except:
-            pass
+            if PDF_PLUMBER_AVAILABLE:
+                pdf_file.seek(0)  # Reset file pointer
+                with pdfplumber.open(pdf_file) as pdf:
+                    for page in pdf.pages:
+                        text += page.extract_text() + "\n"
+        except Exception as e:
+            print(f"pdfplumber extraction failed: {e}")
         
         return text
     
     def _ocr_pdf(self, pdf_file) -> str:
         """OCR PDF when direct extraction fails"""
         text = ""
+        
+        if not OCR_AVAILABLE:
+            raise ImportError("OCR libraries not available. Install pytesseract, PyMuPDF, and Pillow: pip install pytesseract PyMuPDF Pillow")
         
         try:
             # Use PyMuPDF to convert PDF pages to images
