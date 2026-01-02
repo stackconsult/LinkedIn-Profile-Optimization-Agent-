@@ -314,16 +314,9 @@ def render_upload_section():
             
             with st.spinner("🔍 Analyzing your LinkedIn profile..."):
                 try:
-                    # Convert uploaded files to base64
-                    base64_images = []
-                    for file in uploaded_files:
-                        image_bytes = file.read()
-                        base64_image = base64.b64encode(image_bytes).decode('utf-8')
-                        base64_images.append(base64_image)
-                    
-                    # Extract profile data
+                    # Extract profile data using original file objects
                     vision_engine = VisionEngine()
-                    profile_data = vision_engine.extract_profile_data(base64_images)
+                    profile_data = vision_engine.extract_profile_data(uploaded_files)
                     
                     # Store in session state
                     st.session_state.profile_data = profile_data
@@ -396,17 +389,9 @@ def render_upload_section():
             if manual_analyze_button:
                 with st.spinner("🔍 Manually analyzing your LinkedIn profile..."):
                     try:
-                        # Convert uploaded files to base64
-                        base64_images = []
-                        for file in uploaded_files:
-                            file.seek(0)  # Reset file pointer
-                            image_bytes = file.read()
-                            base64_image = base64.b64encode(image_bytes).decode('utf-8')
-                            base64_images.append(base64_image)
-                        
-                        # Extract profile data
+                        # Extract profile data using original file objects
                         vision_engine = VisionEngine()
-                        profile_data = vision_engine.extract_profile_data(base64_images)
+                        profile_data = vision_engine.extract_profile_data(uploaded_files)
                         
                         # Store in session state
                         st.session_state.profile_data = profile_data

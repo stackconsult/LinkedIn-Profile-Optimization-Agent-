@@ -264,6 +264,51 @@ class ContentQualityScorer:
             all_suggestions
         )
     
+    def score_profile_content(self, profile_data, target_industry: str = "Technology", target_role: str = "Software Engineer") -> Dict[str, Any]:
+        """Score profile content - wrapper for calculate_overall_score"""
+        # Convert LinkedInProfile to dict if needed
+        if hasattr(profile_data, 'headline'):
+            profile_dict = {
+                'headline': profile_data.headline,
+                'about': profile_data.about,
+                'experience': profile_data.experience,
+                'skills': profile_data.skills
+            }
+        else:
+            profile_dict = profile_data
+        
+        # Calculate scores using existing method
+        scores = self.calculate_overall_score(profile_dict, target_industry, target_role)
+        
+        # Convert to simple dict format for UI
+        result = {}
+        for section, metrics in scores.items():
+            result[f'{section}_score'] = metrics.score
+            result[f'{section}_max_score'] = metrics.max_score
+            result[f'{section}_feedback'] = metrics.feedback
+            result[f'{section}_suggestions'] = metrics.suggestions
+        
+        return result
+    
+    def get_quality_recommendations(self, quality_scores: Dict[str, Any]) -> List[str]:
+        """Get quality recommendations based on scores"""
+        recommendations = []
+        
+        # Extract scores from the quality_scores dict
+        for key, value in quality_scores.items():
+            if key.endswith('_score') and isinstance(value, int):
+                section = key.replace('_score', '')
+                score = value
+                max_score_key = f'{section}_max_score'
+                max_score = quality_scores.get(max_score_key, 100)
+                
+                if score < max_score * 0.7:  # Less than 70% of max score
+                    feedback_key = f'{section}_feedback'
+                    feedback = quality_scores.get(feedback_key, [])
+                    recommendations.extend(feedback)
+        
+        return list(set(recommendations))  # Remove duplicates
+    
     def validate_content(self, content: str, content_type: str) -> Dict[str, Any]:
         """Real-time content validation"""
         validation_result = {
