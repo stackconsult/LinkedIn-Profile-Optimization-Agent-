@@ -42,33 +42,42 @@ class VisionEngine:
     
     def _create_vision_prompt(self) -> str:
         """Create the prompt for vision model"""
-        return """You are extracting LinkedIn profile data from screenshots. Your task is to extract ALL visible text with high accuracy. Return ONLY a JSON object with this exact structure:
+        return """You are a LinkedIn profile data extraction specialist. Your ONLY job is to extract ALL text visible in these screenshots with 100% accuracy.
+
+CRITICAL EXTRACTION RULES:
+1. Extract EVERY word of text visible in ALL screenshots
+2. Do NOT skip any bullet points, descriptions, or details
+3. Include ALL job responsibilities, achievements, and skills
+4. Preserve exact wording while organizing properly
+5. If you see experience entries, extract ALL of them with complete descriptions
+6. If you see skills, extract EVERY single skill listed
+7. Do NOT invent information - only extract what's visible
+8. Do NOT summarize - provide complete text
+
+Return ONLY this JSON structure with ALL visible text:
 
 {
-    "headline": "professional title here",
-    "about": "complete summary text here - include all paragraphs and details",
+    "headline": "exact headline text",
+    "about": "complete About section text with all paragraphs",
     "experience": [
         {
             "title": "exact job title",
-            "company": "exact company name", 
-            "dates": "exact employment dates",
-            "description": "complete job description with all responsibilities, achievements, and details visible"
+            "company": "exact company name",
+            "dates": "exact employment dates", 
+            "description": "COMPLETE job description with ALL responsibilities, achievements, bullet points, and details visible in screenshots"
         }
     ],
-    "skills": ["skill1", "skill2", "skill3"]
+    "skills": ["skill1", "skill2", "skill3", "skill4", "skill5"]
 }
 
-CRITICAL EXTRACTION REQUIREMENTS:
-- Extract ALL text visible in the screenshots - do not skip any details
-- Include complete job descriptions with all bullet points and responsibilities
-- Capture all skills listed, including technical and soft skills
-- Preserve exact wording while cleaning up formatting
-- If information is not visible in any screenshot, use empty strings "" or empty arrays []
-- Escape quotes in text with backslash: \\"
-- Do not invent information - only transcribe what you see
-- Pay special attention to job descriptions - extract ALL responsibilities and achievements
+IMPORTANT:
+- Extract ALL experience entries visible (not just one)
+- Extract ALL skills visible (not just a few)
+- Include complete job descriptions with all bullet points
+- Do not say "not found" if text is clearly visible in screenshots
+- Be thorough and extract everything you can see
 
-IMPORTANT: Extract everything visible, especially job descriptions and skills. Return ONLY the JSON object.
+Return ONLY the JSON object - no explanations or extra text.
 """
     
     def _prepare_messages(self, base64_images: List[str]) -> List[Dict[str, Any]]:
