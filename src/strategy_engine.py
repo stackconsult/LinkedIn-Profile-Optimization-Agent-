@@ -42,6 +42,10 @@ class StrategyEngine:
         if not self.openai_client:
             raise ValueError("OpenAI client not initialized")
         
+        # Guard against malformed inputs
+        if isinstance(messages, str):
+            # Convert raw string into a minimal chat format to avoid API 400 errors
+            messages = [{"role": "user", "content": messages}]
         if not isinstance(messages, list):
             raise ValueError("messages must be a list of chat messages")
         
@@ -56,6 +60,47 @@ class StrategyEngine:
         )
         
         return response.choices[0].message.content
+    
+    @staticmethod
+    def _normalize_profile(profile: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize profile data so downstream prompt builders can safely access fields.
+        Handles both dicts and objects (e.g., ExperienceItem).
+        """
+        if profile is None:
+            return {}
+        
+        # Headline/About/Skills
+        get_field = lambda obj, key, default="": obj.get(key, default) if isinstance(obj, dict) else getattr(obj, key, default)
+        
+        experiences_raw = get_field(profile, "experience", [])
+        normalized_experiences = []
+        for exp in experiences_raw or []:
+            if isinstance(exp, dict):
+                normalized_experiences.append(
+                    {
+                        "title": exp.get("title", ""),
+                        "company": exp.get("company", ""),
+                        "dates": exp.get("dates", ""),
+                        "description": exp.get("description", ""),
+                    }
+                )
+            else:
+                normalized_experiences.append(
+                    {
+                        "title": getattr(exp, "title", ""),
+                        "company": getattr(exp, "company", ""),
+                        "dates": getattr(exp, "dates", ""),
+                        "description": getattr(exp, "description", ""),
+                    }
+                )
+        
+        return {
+            "headline": get_field(profile, "headline", ""),
+            "about": get_field(profile, "about", ""),
+            "experience": normalized_experiences,
+            "skills": get_field(profile, "skills", []),
+        }
     
     def _call_together_model(self, prompt: str, model_id: str) -> str:
         """Call Together AI model (Llama 3)"""
@@ -192,25 +237,8 @@ class StrategyEngine:
         """
         from src.prompt_templates import format_perfect_profile_prompt, get_system_prompt
         
-        # Normalize experience objects into dictionaries to avoid attribute errors
-        experiences = current_profile.get("experience", [])
-        normalized_experiences = []
-        for exp in experiences:
-            if hasattr(exp, "title"):
-                normalized_experiences.append(
-                    {
-                        "title": getattr(exp, "title", ""),
-                        "company": getattr(exp, "company", ""),
-                        "dates": getattr(exp, "dates", ""),
-                        "description": getattr(exp, "description", ""),
-                    }
-                )
-            else:
-                normalized_experiences.append(exp)
-        normalized_profile = {
-            **current_profile,
-            "experience": normalized_experiences,
-        }
+        # Normalize profile to handle ExperienceItem objects
+        normalized_profile = self._normalize_profile(current_profile)
         
         # Build prompts
         system_prompt = get_system_prompt(target_industry, target_role)
@@ -257,25 +285,8 @@ class StrategyEngine:
         """
         from src.prompt_templates import format_gap_analysis_prompt, get_system_prompt
         
-        # Normalize experience objects into dictionaries
-        experiences = current_profile.get("experience", [])
-        normalized_experiences = []
-        for exp in experiences:
-            if hasattr(exp, "title"):
-                normalized_experiences.append(
-                    {
-                        "title": getattr(exp, "title", ""),
-                        "company": getattr(exp, "company", ""),
-                        "dates": getattr(exp, "dates", ""),
-                        "description": getattr(exp, "description", ""),
-                    }
-                )
-            else:
-                normalized_experiences.append(exp)
-        normalized_profile = {
-            **current_profile,
-            "experience": normalized_experiences,
-        }
+        # Normalize profile to handle ExperienceItem objects
+        normalized_profile = self._normalize_profile(current_profile)
         
         # Build prompts
         system_prompt = get_system_prompt(target_industry, target_role)
