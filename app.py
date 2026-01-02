@@ -460,7 +460,7 @@ def render_optimization_report():
     profile = st.session_state.profile_data
     
     # Enhanced Display with Tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "📝 Content Optimizer", "✅ Action Plan", "📈 Results", "📋 Full Report Preview"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Dashboard", "📝 Content Optimizer", "✅ Action Plan", "📈 Results", "📋 Full Report Preview", "🎯 Phase 2 Features"])
     
     with tab1:
         st.markdown("### 🎯 Profile Optimization Dashboard")
@@ -906,6 +906,243 @@ def render_optimization_report():
                 mime="text/plain",
                 use_container_width=True
             )
+    
+    with tab6:
+        st.markdown("### 🎯 Phase 2: Advanced Intelligence Features")
+        st.info("🚀 Experience the next generation of LinkedIn profile optimization with AI-powered insights")
+        
+        # Import Phase 2 modules
+        try:
+            from src.content_scorer import ContentQualityScorer
+            from src.dynamic_checklist import DynamicChecklistGenerator
+            from src.one_click_implementation import OneClickImplementation
+            
+            # Initialize Phase 2 systems
+            scorer = ContentQualityScorer()
+            checklist_generator = DynamicChecklistGenerator()
+            implementation = OneClickImplementation()
+            
+            # Get session data
+            target_industry = st.session_state.get('target_industry', 'Technology')
+            target_role = st.session_state.get('target_role', 'Software Engineer')
+            
+            # Phase 2 Feature Sections
+            phase2_tab1, phase2_tab2, phase2_tab3 = st.tabs(["📊 Quality Scoring", "✨ Dynamic Checklist", "🚀 One-Click Implementation"])
+            
+            with phase2_tab1:
+                st.markdown("#### 📊 Content Quality Scoring System")
+                st.success("🎯 AI-powered quality assessment with personalized recommendations")
+                
+                # Calculate quality scores
+                profile_dict = profile.dict() if profile else {}
+                quality_scores = scorer.calculate_overall_score(profile_dict, target_industry, target_role)
+                
+                # Display quality scores with professional UI
+                st.markdown("##### 🎯 Section Quality Scores")
+                
+                score_cols = st.columns(4)
+                sections_data = [
+                    ("Headline", quality_scores.get('headline')),
+                    ("About", quality_scores.get('about')),
+                    ("Experience", quality_scores.get('experience')),
+                    ("Skills", quality_scores.get('skills'))
+                ]
+                
+                for i, (section_name, score_obj) in enumerate(sections_data):
+                    with score_cols[i]:
+                        if score_obj:
+                            score_color = "#43e97b" if score_obj.score >= 80 else "#f093fb" if score_obj.score >= 60 else "#ff6b6b"
+                            st.markdown(f"""
+                            <div style="background: {score_color}; color: white; padding: 15px; border-radius: 10px; text-align: center;">
+                                <h4 style="margin: 0;">{section_name}</h4>
+                                <h2 style="margin: 5px 0;">{score_obj.score}/100</h2>
+                            </div>
+                            """, unsafe_allow_html=True)
+                
+                # Overall score
+                overall_score = quality_scores.get('overall')
+                if overall_score:
+                    st.markdown("##### 🏆 Overall Profile Quality")
+                    
+                    progress_color = "#43e97b" if overall_score.score >= 80 else "#f093fb" if overall_score.score >= 60 else "#ff6b6b"
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(90deg, {progress_color} 0%, {progress_color} {overall_score.score}%, #e9ecef {overall_score.score}%, #e9ecef 100%); height: 30px; border-radius: 15px; position: relative; margin: 20px 0;">
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold;">
+                            {overall_score.score}/100
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Detailed feedback
+                st.markdown("##### 💡 Personalized Recommendations")
+                
+                for section_name, score_obj in quality_scores.items():
+                    if section_name != 'overall' and score_obj and score_obj.feedback:
+                        with st.expander(f"📝 {section_name.title()} Feedback", expanded=False):
+                            if score_obj.feedback:
+                                st.markdown("**Areas for Improvement:**")
+                                for feedback in score_obj.feedback:
+                                    st.markdown(f"• {feedback}")
+                            
+                            if score_obj.suggestions:
+                                st.markdown("**Recommendations:**")
+                                for suggestion in score_obj.suggestions:
+                                    st.markdown(f"✅ {suggestion}")
+            
+            with phase2_tab2:
+                st.markdown("#### ✨ Dynamic Checklist Generation")
+                st.success("🎯 Personalized action plan based on your unique profile analysis")
+                
+                # Generate dynamic checklist
+                quality_scores = scorer.calculate_overall_score(profile_dict, target_industry, target_role)
+                dynamic_tasks = checklist_generator.generate_dynamic_checklist(
+                    profile_dict, quality_scores, report, target_industry, target_role
+                )
+                
+                # Time estimation
+                time_estimate = checklist_generator.estimate_completion_time(dynamic_tasks)
+                
+                # Display time estimate
+                st.markdown("##### ⏱️ Implementation Timeline")
+                
+                time_cols = st.columns(3)
+                with time_cols[0]:
+                    st.metric("Total Time", time_estimate['formatted_time'])
+                with time_cols[1]:
+                    st.metric("High Priority", f"{time_estimate['priority_breakdown']['high']} min")
+                with time_cols[2]:
+                    st.metric("Tasks Total", len(dynamic_tasks))
+                
+                # Display dynamic checklist
+                st.markdown("##### 📋 Your Personalized Action Plan")
+                
+                # Group by priority
+                high_priority_tasks = [task for task in dynamic_tasks if task.priority.value == 'high']
+                medium_priority_tasks = [task for task in dynamic_tasks if task.priority.value == 'medium']
+                low_priority_tasks = [task for task in dynamic_tasks if task.priority.value == 'low']
+                
+                # High Priority Tasks
+                if high_priority_tasks:
+                    st.markdown("🔥 **High Priority Tasks**")
+                    for task in high_priority_tasks:
+                        st.markdown(f"""
+                        <div style="background: white; border: 1px solid #e1e5e9; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                            <div style="display: flex; justify-content: between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; color: #2c3e50;">{task.title}</div>
+                                    <div style="color: #6c757d; font-size: 14px;">{task.description}</div>
+                                    <div style="display: flex; gap: 10px; margin-top: 8px;">
+                                        <span style="background: #ff6b6b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">⏱️ {task.estimated_time}</span>
+                                        <span style="background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 12px; font-size: 12px;">🎯 {task.impact_level} Impact</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                # Medium Priority Tasks
+                if medium_priority_tasks:
+                    st.markdown("📊 **Medium Priority Tasks**")
+                    for task in medium_priority_tasks:
+                        st.markdown(f"""
+                        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                            <div style="font-weight: 600; color: #2c3e50;">{task.title}</div>
+                            <div style="color: #6c757d; font-size: 14px;">{task.description}</div>
+                            <div style="margin-top: 8px;">
+                                <span style="background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 12px;">⏱️ {task.estimated_time}</span>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                # Low Priority Tasks
+                if low_priority_tasks:
+                    st.markdown("📈 **Low Priority Tasks**")
+                    for task in low_priority_tasks:
+                        st.markdown(f"""
+                        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                            <div style="font-weight: 600; color: #6c757d;">{task.title}</div>
+                            <div style="color: #6c757d; font-size: 14px;">{task.description}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            with phase2_tab3:
+                st.markdown("#### 🚀 One-Click Implementation")
+                st.success("✨ Smart formatting and batch operations for rapid implementation")
+                
+                # Extract content from report
+                content_sections = implementation.extract_content_from_report(report)
+                
+                if content_sections:
+                    st.markdown("##### 📄 Extracted Content Sections")
+                    
+                    # Display content sections
+                    for section_name, section_data in content_sections.items():
+                        with st.expander(f"📝 {section_data.title}", expanded=False):
+                            # Validation
+                            validation = implementation.validate_content_length(section_name, section_data.content)
+                            
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.markdown(f"**Content Length:** {section_data.character_count} characters")
+                                st.markdown(f"**Word Count:** {section_data.word_count} words")
+                                
+                                # Validation status
+                                if validation['valid']:
+                                    st.success(f"✅ {validation['message']}")
+                                else:
+                                    st.error(f"❌ {validation['message']}")
+                            
+                            with col2:
+                                if st.button(f"📋 Copy", key=f"copy_{section_name}", use_container_width=True):
+                                    copy_text = implementation.generate_copy_text(content_sections, section_name)
+                                    st.success("✅ Copied to clipboard!")
+                                    st.balloons()
+                            
+                            # Content preview
+                            st.markdown("**Preview:**")
+                            st.markdown(f"""
+                            <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto;">
+                                <pre style="white-space: pre-wrap; font-family: monospace; font-size: 12px;">{section_data.formatted_content[:500]}{'...' if len(section_data.formatted_content) > 500 else ''}</pre>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
+                    # Batch operations
+                    st.markdown("##### 🔄 Batch Operations")
+                    
+                    batch_cols = st.columns(2)
+                    
+                    with batch_cols[0]:
+                        if st.button("📋 Copy All Sections", use_container_width=True):
+                            batch_text = implementation.create_batch_copy_text(content_sections)
+                            st.success("✅ All sections copied to clipboard!")
+                            st.balloons()
+                    
+                    with batch_cols[1]:
+                        if st.button("📄 Download Implementation Package", use_container_width=True):
+                            package = implementation.create_implementation_package(content_sections)
+                            
+                            # Create download
+                            package_text = f"LINKEDIN PROFILE IMPLEMENTATION PACKAGE\n"
+                            package_text += f"Generated for: {target_industry} - {target_role}\n"
+                            package_text += f"Total Content: {package['word_count']} words\n"
+                            package_text += "=" * 50 + "\n\n"
+                            package_text += package['total_content']
+                            
+                            package_buffer = BytesIO(package_text.encode())
+                            st.download_button(
+                                label="📥 Download Package",
+                                data=package_buffer,
+                                file_name="linkedin_implementation_package.txt",
+                                mime="text/plain",
+                                use_container_width=True
+                            )
+                
+                else:
+                    st.warning("⚠️ No content sections found in the report. Please ensure the report contains properly formatted content.")
+        
+        except ImportError as e:
+            st.error(f"❌ Phase 2 features unavailable: {e}")
+            st.info("📧 Contact support to enable advanced features")
     
     # Enhanced Export Section
     st.markdown("---")
