@@ -461,6 +461,92 @@ def render_optimization_report():
     # Display the report
     st.markdown(report)
     
+    # Implementation Checklist
+    st.markdown('<div class="section-header">✅ Implementation Checklist</div>', unsafe_allow_html=True)
+    st.info("📝 Track your progress as you implement the optimization recommendations")
+    
+    # Initialize checklist in session state if not exists
+    if 'implementation_checklist' not in st.session_state:
+        st.session_state.implementation_checklist = {}
+    
+    # Create default checklist items based on common optimization tasks
+    default_checklist = {
+        "📝 Update Headline": "Choose and implement one of the recommended headlines",
+        "📄 Rewrite About Section": "Use the complete About section rewrite provided",
+        "💼 Enhance Experience Descriptions": "Update all job descriptions with quantifiable achievements",
+        "🎯 Add Missing Skills": "Include all recommended skills for your target role",
+        "📊 Add Measurable Outcomes": "Include specific numbers, percentages, and metrics",
+        "🔍 Optimize Keywords": "Ensure industry-specific keywords are included throughout",
+        "📱 Get Recommendations": "Request recommendations from managers and colleagues",
+        "📅 Plan Content Strategy": "Follow the 30-day content and engagement plan"
+    }
+    
+    # Initialize checklist items
+    for item, description in default_checklist.items():
+        if item not in st.session_state.implementation_checklist:
+            st.session_state.implementation_checklist[item] = {
+                "completed": False,
+                "description": description,
+                "notes": ""
+            }
+    
+    # Display interactive checklist
+    completed_count = 0
+    total_count = len(st.session_state.implementation_checklist)
+    
+    for item, details in st.session_state.implementation_checklist.items():
+        col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
+        
+        with col1:
+            completed = st.checkbox(
+                "", 
+                value=details["completed"],
+                key=f"check_{item}"
+            )
+            if completed != details["completed"]:
+                st.session_state.implementation_checklist[item]["completed"] = completed
+                if completed:
+                    completed_count += 1
+                else:
+                    completed_count -= 1
+        
+        with col2:
+            st.markdown(f"**{item}**")
+            st.caption(details["description"])
+        
+        with col3:
+            if details["completed"]:
+                st.success("✅")
+            else:
+                st.info("⏳")
+    
+    # Progress bar
+    current_completed = sum(1 for details in st.session_state.implementation_checklist.values() if details["completed"])
+    progress = current_completed / total_count
+    
+    st.markdown("### 📈 Overall Progress")
+    st.progress(progress)
+    st.write(f"Completed: {current_completed}/{total_count} tasks ({progress:.1%})")
+    
+    # Export checklist
+    st.markdown("### 📋 Export Your Checklist")
+    
+    checklist_text = "LINKEDIN PROFILE OPTIMIZATION CHECKLIST\n" + "="*50 + "\n\n"
+    
+    for item, details in st.session_state.implementation_checklist.items():
+        status = "✅ COMPLETED" if details["completed"] else "⏳ PENDING"
+        checklist_text += f"{status} - {item}\n"
+        checklist_text += f"   {details['description']}\n\n"
+    
+    checklist_buffer = BytesIO(checklist_text.encode())
+    st.download_button(
+        label="📄 Download Checklist",
+        data=checklist_buffer,
+        file_name="linkedin_optimization_checklist.txt",
+        mime="text/plain",
+        use_container_width=True
+    )
+    
     # Feedback section
     st.markdown('<div class="section-header">👍 Feedback</div>', unsafe_allow_html=True)
     
@@ -495,7 +581,7 @@ def render_optimization_report():
         # In-memory download without relying on filesystem
         text_buffer = BytesIO(report.encode())
         st.download_button(
-            label="📄 Download as Text",
+            label="📄 Download Report",
             data=text_buffer,
             file_name="linkedin_optimization_report.txt",
             mime="text/plain",

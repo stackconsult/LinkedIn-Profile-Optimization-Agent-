@@ -42,27 +42,33 @@ class VisionEngine:
     
     def _create_vision_prompt(self) -> str:
         """Create the prompt for vision model"""
-        return """You are extracting LinkedIn profile data from screenshots. Return ONLY a JSON object with this exact structure:
+        return """You are extracting LinkedIn profile data from screenshots. Your task is to extract ALL visible text with high accuracy. Return ONLY a JSON object with this exact structure:
 
 {
     "headline": "professional title here",
-    "about": "summary text here",
+    "about": "complete summary text here - include all paragraphs and details",
     "experience": [
         {
-            "title": "job title",
-            "company": "company name", 
-            "dates": "employment dates",
-            "description": "job description"
+            "title": "exact job title",
+            "company": "exact company name", 
+            "dates": "exact employment dates",
+            "description": "complete job description with all responsibilities, achievements, and details visible"
         }
     ],
-    "skills": ["skill1", "skill2"]
+    "skills": ["skill1", "skill2", "skill3"]
 }
 
-CRITICAL: 
-- Return ONLY the JSON object - no explanations, no markdown, no extra text
-- If information is not visible, use empty strings "" or empty arrays []
+CRITICAL EXTRACTION REQUIREMENTS:
+- Extract ALL text visible in the screenshots - do not skip any details
+- Include complete job descriptions with all bullet points and responsibilities
+- Capture all skills listed, including technical and soft skills
+- Preserve exact wording while cleaning up formatting
+- If information is not visible in any screenshot, use empty strings "" or empty arrays []
 - Escape quotes in text with backslash: \\"
 - Do not invent information - only transcribe what you see
+- Pay special attention to job descriptions - extract ALL responsibilities and achievements
+
+IMPORTANT: Extract everything visible, especially job descriptions and skills. Return ONLY the JSON object.
 """
     
     def _prepare_messages(self, base64_images: List[str]) -> List[Dict[str, Any]]:
