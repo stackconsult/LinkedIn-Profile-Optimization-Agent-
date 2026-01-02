@@ -302,6 +302,44 @@ def render_admin_panel():
                 st.sidebar.error(f"Error checking status: {e}")
 
 
+def extract_optimized_content_from_report(optimization_report: str) -> dict:
+    """Extract optimized content from the optimization report"""
+    optimized_content = {
+        'headline': 'Generated from optimization report',
+        'about': 'Generated from optimization report'
+    }
+    
+    if not optimization_report:
+        return optimized_content
+    
+    # Extract headline from report
+    lines = optimization_report.split('\n')
+    for i, line in enumerate(lines):
+        if 'HEADLINE' in line.upper() and i + 1 < len(lines):
+            # Look for headline options in the next few lines
+            for j in range(i + 1, min(i + 6, len(lines))):
+                if lines[j].strip() and not lines[j].startswith('**') and not lines[j].startswith('#'):
+                    optimized_content['headline'] = lines[j].strip()
+                    break
+            break
+    
+    # Extract about section from report
+    for i, line in enumerate(lines):
+        if 'ABOUT' in line.upper() and i + 1 < len(lines):
+            # Collect about section content
+            about_lines = []
+            for j in range(i + 1, len(lines)):
+                if lines[j].strip() and not lines[j].startswith('**') and not lines[j].startswith('#') and 'EXPERIENCE' not in lines[j].upper():
+                    about_lines.append(lines[j].strip())
+                elif 'EXPERIENCE' in lines[j].upper():
+                    break
+            if about_lines:
+                optimized_content['about'] = ' '.join(about_lines[:3])  # First few lines
+            break
+    
+    return optimized_content
+
+
 def render_upload_section():
     """Render file upload section with PDF and image options"""
     st.markdown('<div class="section-header">📤 Upload Your Profile</div>', unsafe_allow_html=True)
@@ -341,11 +379,36 @@ def render_upload_section():
                     vision_engine = VisionEngine()
                     profile_data = vision_engine.extract_profile_data(uploaded_files)
                     
+                    # CRITICAL DEBUGGING: Verify extracted data is REAL user data
+                    st.markdown("#### 🔍 Extraction Verification")
+                    st.code(f"""
+EXTRACTED PROFILE DATA:
+Headline: {profile_data.headline[:100] if profile_data.headline else 'NONE'}...
+About: {profile_data.about[:200] if profile_data.about else 'NONE'}...
+Experience Count: {len(profile_data.experience)}
+Skills Count: {len(profile_data.skills)}
+
+⚠️  VERIFICATION CHECK:
+- If headline shows 'Software Engineer | Technology | Professional' - THIS IS FALSE DATA
+- If about shows 'Generated from PDF analysis' - THIS IS FALSE DATA  
+- If skills count is exactly 61 - THIS IS SUSPICIOUS
+- Real user data should show YOUR ACTUAL LinkedIn content
+                    """)
+                    
                     # Store in session state
                     st.session_state.profile_data = profile_data
                     st.session_state.upload_method = "images"
                     
                     st.success("✅ Profile analysis complete!")
+                    
+                    # Warn if false data detected
+                    if profile_data.headline and "Software Engineer | Technology | Professional" in profile_data.headline:
+                        st.error("🚨 CRITICAL: FALSE DATA DETECTED! The app extracted template data instead of your real profile.")
+                        st.error("This indicates a serious bug in the vision extraction system.")
+                    
+                    if profile_data.about and "Generated from PDF analysis" in profile_data.about:
+                        st.error("🚨 CRITICAL: FALSE DATA DETECTED! The app generated template text instead of your real about section.")
+                        st.error("This indicates a serious bug in the data pipeline.")
                     
                     # Display extraction summary
                     st.markdown("#### 📊 Extraction Summary")
@@ -536,24 +599,22 @@ def render_upload_section():
                                 st.session_state.ultimate_profile_template = ultimate_template
                                 st.session_state.optimization_report = ultimate_template
                                 
-                                # Create profile data for compatibility
-                                from src.vision_engine import LinkedInProfile
-                                st.session_state.profile_data = LinkedInProfile(
-                                    headline=f"{target_role} | {target_industry} | Professional",
-                                    about="Generated from PDF analysis",
-                                    experience=[
-                                        {
-                                            "title": exp.get('title', ''),
-                                            "company": exp.get('company', ''),
-                                            "dates": exp.get('dates', ''),
-                                            "description": exp.get('description', '')
-                                        }
-                                        for exp in profile_data.experiences
-                                    ],
-                                    skills=profile_data.skills
-                                )
+                                # CRITICAL: Use user's ACTUAL extracted profile data - NEVER create false template data
+                                # The user's real profile data should already be in st.session_state.profile_data
+                                # DO NOT create false LinkedInProfile objects with template data
                                 
-                                st.success("🎉 Optimization strategy generated automatically!")
+                                # Only store the optimization report - keep user's actual profile data intact
+                                st.session_state.pdf_analysis_report = analysis_report
+                                st.session_state.ultimate_profile_template = ultimate_template
+                                st.session_state.optimization_report = ultimate_template
+                                
+                                # CRITICAL FIX: NEVER create false profile data
+                                # The user's actual profile data should come from vision extraction, not templates
+                                if not st.session_state.get('profile_data'):
+                                    st.error("❌ CRITICAL ERROR: No profile data found. Please upload your LinkedIn screenshots first.")
+                                    st.stop()
+                                
+                                st.success("🎉 Optimization strategy generated from your actual profile data!")
                                 st.balloons()
                                 st.rerun()  # Refresh to show results
                             
@@ -585,24 +646,22 @@ def render_upload_section():
                                     st.session_state.ultimate_profile_template = ultimate_template
                                     st.session_state.optimization_report = ultimate_template
                                     
-                                    # Create profile data for compatibility
-                                    from src.vision_engine import LinkedInProfile
-                                    st.session_state.profile_data = LinkedInProfile(
-                                        headline=f"{target_role} | {target_industry} | Professional",
-                                        about="Generated from PDF analysis",
-                                        experience=[
-                                            {
-                                                "title": exp.get('title', ''),
-                                                "company": exp.get('company', ''),
-                                                "dates": exp.get('dates', ''),
-                                                "description": exp.get('description', '')
-                                            }
-                                            for exp in profile_data.experiences
-                                        ],
-                                        skills=profile_data.skills
-                                    )
+                                    # CRITICAL: Use user's ACTUAL extracted profile data - NEVER create false template data
+                                    # The user's real profile data should already be in st.session_state.profile_data
+                                    # DO NOT create false LinkedInProfile objects with template data
                                     
-                                    st.success("🎉 Ultimate profile generated successfully!")
+                                    # Only store the optimization report - keep user's actual profile data intact
+                                    st.session_state.pdf_analysis_report = analysis_report
+                                    st.session_state.ultimate_profile_template = ultimate_template
+                                    st.session_state.optimization_report = ultimate_template
+                                    
+                                    # CRITICAL FIX: NEVER create false profile data
+                                    # The user's actual profile data should come from vision extraction, not templates
+                                    if not st.session_state.get('profile_data'):
+                                        st.error("❌ CRITICAL ERROR: No profile data found. Please upload your LinkedIn screenshots first.")
+                                        st.stop()
+                                    
+                                    st.success("🎉 Ultimate profile generated from your actual profile data!")
                                     st.balloons()
                                     st.rerun()  # Refresh to show results
                                 
@@ -746,13 +805,16 @@ def render_unified_results():
         
         with col2:
             st.markdown("#### ✨ Optimized Profile")
-            # Extract optimized content from report
-            optimized_headline = "Senior Software Engineer | Cloud Architecture | Full-Stack Development"
-            optimized_about = "Experienced software engineer with 8+ years in full-stack development, cloud architecture, and team leadership. Passionate about building scalable solutions and mentoring junior developers."
-            st.markdown(f"**Headline:** {optimized_headline}")
-            st.markdown(f"**About:** {optimized_about}")
-            st.markdown("**Experience:** Enhanced descriptions with quantifiable achievements")
-            st.markdown("**Skills:** Optimized skill keywords for better visibility")
+            # Extract optimized content from the actual optimization report
+            if st.session_state.get('optimization_report'):
+                # Parse the optimization report to extract actual optimized content
+                optimized_content = extract_optimized_content_from_report(st.session_state.optimization_report)
+                st.markdown(f"**Headline:** {optimized_content.get('headline', 'Generated from optimization report')}")
+                st.markdown(f"**About:** {optimized_content.get('about', 'Generated from optimization report')}")
+                st.markdown("**Experience:** Enhanced descriptions with quantifiable achievements")
+                st.markdown("**Skills:** Optimized skill keywords for better visibility")
+            else:
+                st.info("📝 Optimization report will be displayed here after analysis")
     
     with tab3:
         st.markdown("### ✅ Action Plan")
