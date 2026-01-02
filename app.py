@@ -1047,7 +1047,8 @@ def render_unified_results():
                     profile_dict = profile
                 
                 # Analyze gaps
-                analysis = gap_analyzer.analyze_gaps(profile_dict, target_industry, target_role)
+                with st.spinner("🔍 Analyzing your LinkedIn profile gaps..."):
+                    analysis = gap_analyzer.analyze_gaps(profile_dict, target_industry, target_role)
                 
                 # Display completeness score
                 score = analysis['completeness_score']
@@ -1333,7 +1334,7 @@ def analyze_profile(uploaded_files):
                     target_industry=target_industry,
                     target_role=target_role,
                     input_tokens=strategy_engine.estimate_tokens(
-                        profile.dict(), target_industry, target_role
+                        profile.__dict__ if hasattr(profile, '__dict__') else profile, target_industry, target_role
                     ),
                     output_tokens=len(optimization_report) // 4,  # Rough estimate
                     generation_time=generation_time,
@@ -1344,7 +1345,7 @@ def analyze_profile(uploaded_files):
                 
                 # Log training example with error handling
                 try:
-                    profile_dict = profile.dict()
+                    profile_dict = profile.__dict__ if hasattr(profile, '__dict__') else profile
                     training_logger.log_training_example(
                         input_text=str(profile_dict),
                         target_industry=target_industry,
