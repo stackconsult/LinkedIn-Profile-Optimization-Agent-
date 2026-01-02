@@ -599,20 +599,28 @@ Skills Count: {len(profile_data.skills)}
                                 st.session_state.ultimate_profile_template = ultimate_template
                                 st.session_state.optimization_report = ultimate_template
                                 
-                                # CRITICAL: Use user's ACTUAL extracted profile data - NEVER create false template data
-                                # The user's real profile data should already be in st.session_state.profile_data
-                                # DO NOT create false LinkedInProfile objects with template data
+                                # CRITICAL FIX: Create LinkedInProfile from PDF data for compatibility
+                                # This uses the ACTUAL extracted data from the PDF, not template data
+                                from src.vision_engine import LinkedInProfile, ExperienceItem
                                 
-                                # Only store the optimization report - keep user's actual profile data intact
-                                st.session_state.pdf_analysis_report = analysis_report
-                                st.session_state.ultimate_profile_template = ultimate_template
-                                st.session_state.optimization_report = ultimate_template
+                                # Convert PDF experiences to ExperienceItem objects
+                                experience_items = []
+                                for exp in profile_data.experiences:
+                                    exp_item = ExperienceItem(
+                                        title=exp.get('title', ''),
+                                        company=exp.get('company', ''),
+                                        dates=exp.get('dates', ''),
+                                        description=exp.get('description', '')
+                                    )
+                                    experience_items.append(exp_item)
                                 
-                                # CRITICAL FIX: NEVER create false profile data
-                                # The user's actual profile data should come from vision extraction, not templates
-                                if not st.session_state.get('profile_data'):
-                                    st.error("❌ CRITICAL ERROR: No profile data found. Please upload your LinkedIn screenshots first.")
-                                    st.stop()
+                                # Create LinkedInProfile from ACTUAL PDF extracted data
+                                st.session_state.profile_data = LinkedInProfile(
+                                    headline=profile_data.sections.get('headline', profile_data.sections.get('name', 'Profile from PDF')),
+                                    about=profile_data.sections.get('about', profile_data.sections.get('summary', '')),
+                                    experience=experience_items,
+                                    skills=profile_data.skills
+                                )
                                 
                                 st.success("🎉 Optimization strategy generated from your actual profile data!")
                                 st.balloons()
@@ -646,20 +654,28 @@ Skills Count: {len(profile_data.skills)}
                                     st.session_state.ultimate_profile_template = ultimate_template
                                     st.session_state.optimization_report = ultimate_template
                                     
-                                    # CRITICAL: Use user's ACTUAL extracted profile data - NEVER create false template data
-                                    # The user's real profile data should already be in st.session_state.profile_data
-                                    # DO NOT create false LinkedInProfile objects with template data
+                                    # CRITICAL FIX: Create LinkedInProfile from PDF data for compatibility
+                                    # This uses the ACTUAL extracted data from the PDF, not template data
+                                    from src.vision_engine import LinkedInProfile, ExperienceItem
                                     
-                                    # Only store the optimization report - keep user's actual profile data intact
-                                    st.session_state.pdf_analysis_report = analysis_report
-                                    st.session_state.ultimate_profile_template = ultimate_template
-                                    st.session_state.optimization_report = ultimate_template
+                                    # Convert PDF experiences to ExperienceItem objects
+                                    experience_items = []
+                                    for exp in profile_data.experiences:
+                                        exp_item = ExperienceItem(
+                                            title=exp.get('title', ''),
+                                            company=exp.get('company', ''),
+                                            dates=exp.get('dates', ''),
+                                            description=exp.get('description', '')
+                                        )
+                                        experience_items.append(exp_item)
                                     
-                                    # CRITICAL FIX: NEVER create false profile data
-                                    # The user's actual profile data should come from vision extraction, not templates
-                                    if not st.session_state.get('profile_data'):
-                                        st.error("❌ CRITICAL ERROR: No profile data found. Please upload your LinkedIn screenshots first.")
-                                        st.stop()
+                                    # Create LinkedInProfile from ACTUAL PDF extracted data
+                                    st.session_state.profile_data = LinkedInProfile(
+                                        headline=profile_data.sections.get('headline', profile_data.sections.get('name', 'Profile from PDF')),
+                                        about=profile_data.sections.get('about', profile_data.sections.get('summary', '')),
+                                        experience=experience_items,
+                                        skills=profile_data.skills
+                                    )
                                     
                                     st.success("🎉 Ultimate profile generated from your actual profile data!")
                                     st.balloons()
@@ -739,7 +755,13 @@ def render_main_interface():
 def render_unified_results():
     """Render unified results combining Phase 1 and Phase 2 features"""
     report = st.session_state.optimization_report
-    profile = st.session_state.profile_data
+    profile = st.session_state.get('profile_data')
+    
+    # CRITICAL: Handle None profile data gracefully
+    if profile is None:
+        st.error("❌ No profile data found. Please upload your LinkedIn screenshots or PDF first.")
+        st.info("💡 Go to the upload section and upload your LinkedIn profile screenshots or PDF to get started.")
+        return
     
     # Enhanced Display with Integrated Tabs
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Dashboard", "📝 Content Optimizer", "✅ Action Plan", "📈 Results", "📋 Full Report Preview", "🎯 Advanced Features"])
