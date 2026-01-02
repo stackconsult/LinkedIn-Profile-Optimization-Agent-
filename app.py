@@ -346,8 +346,10 @@ def render_upload_section():
                                 target_role = st.session_state.get('target_role', 'Software Engineer')
                                 
                                 # Generate optimization report
-                                optimization_report = strategy_engine.generate_optimization_strategy(
-                                    profile_data, target_industry, target_role
+                                optimization_report = strategy_engine.generate_optimization_plan(
+                                    profile=profile_data,
+                                    target_industry=target_industry,
+                                    target_role=target_role,
                                 )
                                 
                                 # Store in session state

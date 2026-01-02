@@ -331,6 +331,41 @@ class TelemetryLogger:
             stats["success_rate"]["strategy"] = strategy_success / strategy_total
         
         return stats
+    
+    def log_feedback(self, rating: int, feedback: str, upload_method: str = "unknown"):
+        """Log user feedback and ratings"""
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "event_type": "user_feedback",
+            "rating": rating,
+            "feedback_text": feedback,
+            "upload_method": upload_method
+        }
+        
+        # Add to local storage
+        self._add_log_entry(log_data)
+        
+        # Send to Langfuse if available
+        if self.langfuse_client:
+            try:
+                trace = self.langfuse_client.trace(
+                    name="user_feedback",
+                    input={
+                        "rating": rating,
+                        "upload_method": upload_method
+                    },
+                    output={
+                        "feedback_text": feedback
+                    }
+                )
+                trace.update(
+                    output={
+                        "feedback_length": len(feedback),
+                        "rating_category": "positive" if rating >= 4 else "negative"
+                    }
+                )
+            except Exception as e:
+                print(f"Failed to send feedback to Langfuse: {e}")
 
 
 # Global telemetry instance
