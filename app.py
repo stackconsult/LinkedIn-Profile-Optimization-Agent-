@@ -851,8 +851,16 @@ def render_unified_results():
             checklist_gen = DynamicChecklistGenerator()
             
             if profile:
-                dynamic_checklist = checklist_gen.generate_personalized_checklist(
-                    profile, target_industry, target_role
+                # Get quality scores first
+                quality_scores = scorer.score_profile_content(profile, target_industry, target_role)
+                
+                # Generate dynamic checklist with correct method name and parameters
+                dynamic_checklist = checklist_gen.generate_dynamic_checklist(
+                    profile_data=profile.__dict__ if hasattr(profile, '__dict__') else profile,
+                    quality_scores=quality_scores,
+                    optimization_report=st.session_state.get('optimization_report', ''),
+                    target_industry=target_industry,
+                    target_role=target_role
                 )
                 
                 # Display dynamic checklist
@@ -861,10 +869,15 @@ def render_unified_results():
                     with col1:
                         st.checkbox("", key=f"dynamic_{i}")
                     with col2:
-                        st.markdown(f"**{i}.** {item}")
+                        # Handle ChecklistTask objects
+                        task_text = item.description if hasattr(item, 'description') else str(item)
+                        st.markdown(f"**{i}.** {task_text}")
         
         except ImportError:
             st.info("✨ Dynamic checklist available with complete installation")
+        except Exception as e:
+            st.error(f"❌ Dynamic checklist generation failed: {str(e)}")
+            st.info("💡 This is a Phase 2 feature - basic optimization still works")
         
         # One-Click Implementation
         st.markdown("#### 🚀 One-Click Implementation")
@@ -876,22 +889,32 @@ def render_unified_results():
             if st.button("🚀 Generate Copy-Ready Content", use_container_width=True):
                 with st.spinner("🎯 Generating optimized content..."):
                     if profile:
-                        copy_ready = impl.generate_copy_ready_content(
-                            profile, report, target_industry, target_role
-                        )
-                        
-                        st.success("✅ Copy-ready content generated!")
-                        
-                        # Display copy-ready sections
-                        st.markdown("#### 📋 Copy-Ready Sections")
-                        
-                        for section, content in copy_ready.items():
-                            st.markdown(f"**{section}:**")
-                            st.code(content, language=None)
-                            st.markdown("---")
+                        report = st.session_state.get('optimization_report', '')
+                        if report:
+                            # Use the correct method name
+                            copy_ready_sections = impl.extract_content_from_report(report)
+                            
+                            # Create implementation package
+                            implementation_package = impl.create_implementation_package(copy_ready_sections)
+                            
+                            st.success("✅ Copy-ready content generated!")
+                            
+                            # Display copy-ready sections
+                            st.markdown("#### 📋 Copy-Ready Sections")
+                            
+                            for section_name, content_section in copy_ready_sections.items():
+                                st.markdown(f"**{content_section.title}:**")
+                                st.code(content_section.formatted_content, language=None)
+                                st.markdown("---")
+                        else:
+                            st.error("❌ No optimization report found")
+                            st.info("💡 Please complete profile analysis first")
         
         except ImportError:
             st.info("🚀 One-click implementation available with complete installation")
+        except Exception as e:
+            st.error(f"❌ One-click implementation failed: {str(e)}")
+            st.info("💡 This is a Phase 2 feature - basic optimization still works")
         
         # Feedback Section
         st.markdown("#### 📝 Feedback & Rating")
