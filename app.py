@@ -412,6 +412,7 @@ def render_upload_section():
                                 
                                 st.success("🎉 Ultimate profile generated successfully!")
                                 st.balloons()
+                                st.rerun()  # Refresh to show results
                     
                     except ImportError as e:
                         st.error(f"❌ PDF analysis libraries not available: {e}")
@@ -478,6 +479,28 @@ def render_upload_section():
                     with col4:
                         st.metric("Skills", f"{len(profile_data.skills)}")
                     
+                    # Generate optimization report automatically
+                    with st.spinner("🎯 Generating optimization strategy..."):
+                        try:
+                            strategy_engine = get_strategy_engine()
+                            if strategy_engine:
+                                target_industry = st.session_state.get('target_industry', 'Technology')
+                                target_role = st.session_state.get('target_role', 'Software Engineer')
+                                
+                                # Generate optimization report
+                                optimization_report = strategy_engine.generate_optimization_strategy(
+                                    profile_data, target_industry, target_role
+                                )
+                                
+                                # Store in session state
+                                st.session_state.optimization_report = optimization_report
+                                st.success("🎉 Optimization strategy generated!")
+                                st.rerun()  # Refresh to show results
+                            else:
+                                st.error("❌ Strategy engine not available")
+                        except Exception as e:
+                            st.error(f"❌ Strategy generation failed: {str(e)}")
+                    
                 except Exception as e:
                     st.error(f"❌ Analysis failed: {str(e)}")
                     st.info("💡 Please ensure your screenshots are clear and contain your LinkedIn profile information")
@@ -486,6 +509,33 @@ def render_upload_section():
     if st.session_state.get('upload_method'):
         st.markdown("---")
         st.info(f"📤 Current upload method: **{st.session_state.upload_method.upper()}**")
+        
+        # Debug information
+        if st.checkbox("🔍 Show Debug Info"):
+            st.markdown("#### 🔍 Debug Information")
+            
+            # Profile data debug
+            if st.session_state.get('profile_data'):
+                profile = st.session_state.profile_data
+                st.code(f"""
+Profile Data:
+- Headline: {profile.headline[:50] if profile.headline else 'None'}...
+- About: {profile.about[:50] if profile.about else 'None'}...
+- Experience Count: {len(profile.experience)}
+- Skills Count: {len(profile.skills)}
+""")
+            
+            # Optimization report debug
+            if st.session_state.get('optimization_report'):
+                report = st.session_state.optimization_report
+                st.code(f"""
+Optimization Report:
+- Type: {type(report)}
+- Length: {len(str(report))} characters
+- Preview: {str(report)[:200]}...
+""")
+            else:
+                st.warning("⚠️ No optimization report in session state")
         
         if st.session_state.get('pdf_profile_data'):
             pdf_data = st.session_state.pdf_profile_data
