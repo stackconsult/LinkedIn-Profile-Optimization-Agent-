@@ -5,7 +5,13 @@ Strategy engine for LinkedIn profile optimization
 import json
 from typing import Dict, Any, Optional
 from openai import OpenAI
-import together
+
+# Optional together library
+try:
+    import together
+    TOGETHER_AVAILABLE = True
+except ImportError:
+    TOGETHER_AVAILABLE = False
 
 from .config import Config
 from .prompt_templates import get_system_prompt, format_profile_for_prompt, format_followup_content
@@ -25,8 +31,8 @@ class StrategyEngine:
         if Config.OPENAI_API_KEY:
             self.openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
         
-        # Initialize Together client
-        if Config.TOGETHER_API_KEY:
+        # Initialize Together client (optional)
+        if Config.TOGETHER_API_KEY and TOGETHER_AVAILABLE:
             together.api_key = Config.TOGETHER_API_KEY
             self.together_client = together
     
@@ -46,6 +52,9 @@ class StrategyEngine:
     
     def _call_together_model(self, prompt: str, model_id: str) -> str:
         """Call Together AI model (Llama 3)"""
+        if not TOGETHER_AVAILABLE:
+            raise ImportError("Together library not available. Install with: pip install together")
+        
         if not self.together_client:
             raise ValueError("Together client not initialized")
         
