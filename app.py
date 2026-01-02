@@ -279,6 +279,217 @@ def render_admin_panel():
                 st.sidebar.error(f"Error checking status: {e}")
 
 
+def render_upload_section():
+    """Render file upload section with PDF and image options"""
+    st.markdown('<div class="section-header">📤 Upload Your Profile</div>', unsafe_allow_html=True)
+    
+    # Upload options
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 📷 LinkedIn Screenshots")
+        st.info("Upload screenshots of your LinkedIn profile")
+        
+        uploaded_files = st.file_uploader(
+            "Choose LinkedIn screenshots",
+            accept_multiple_files=True,
+            type=['png', 'jpg', 'jpeg'],
+            key="image_uploader",
+            help="Upload multiple screenshots of your LinkedIn profile (headline, about, experience, skills sections)"
+        )
+        
+        if uploaded_files:
+            st.success(f"✅ {len(uploaded_files)} image(s) uploaded")
+            
+            # Display previews
+            st.markdown("**Preview:**")
+            cols = st.columns(min(len(uploaded_files), 4))
+            for i, file in enumerate(uploaded_files[:4]):
+                with cols[i]:
+                    st.image(file, caption=f"Image {i+1}", use_column_width=True)
+    
+    with col2:
+        st.markdown("### 📄 PDF Profile Upload")
+        st.info("Upload your resume or profile PDF for complete analysis")
+        
+        pdf_file = st.file_uploader(
+            "Choose PDF file",
+            type=['pdf'],
+            key="pdf_uploader",
+            help="Upload your resume, CV, or profile PDF for comprehensive analysis and extraction"
+        )
+        
+        if pdf_file:
+            st.success("✅ PDF uploaded successfully")
+            
+            # Display PDF info
+            st.markdown("**File Info:**")
+            st.code(f"Name: {pdf_file.name}\nSize: {pdf_file.size / 1024:.1f} KB")
+            
+            # PDF analysis option
+            if st.button("🔍 Analyze PDF Profile", key="analyze_pdf", use_container_width=True):
+                with st.spinner("🔍 Analyzing PDF profile with OCR and deep research..."):
+                    try:
+                        from src.pdf_analyzer import PDFProfileAnalyzer
+                        
+                        analyzer = PDFProfileAnalyzer()
+                        profile_data = analyzer.analyze_pdf(pdf_file)
+                        
+                        # Store in session state
+                        st.session_state.pdf_profile_data = profile_data
+                        st.session_state.upload_method = "pdf"
+                        
+                        # Display analysis results
+                        st.success("✅ PDF analysis complete!")
+                        
+                        # Show extraction summary
+                        st.markdown("#### 📊 Extraction Summary")
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        with col1:
+                            st.metric("Characters", profile_data.metadata['total_characters'])
+                        with col2:
+                            st.metric("Words", profile_data.metadata['word_count'])
+                        with col3:
+                            st.metric("Experiences", profile_data.metadata['experiences_count'])
+                        with col4:
+                            st.metric("Skills", profile_data.metadata['skills_count'])
+                        
+                        # Show extracted sections
+                        st.markdown("#### 📋 Extracted Content")
+                        
+                        if profile_data.experiences:
+                            st.markdown("**💼 Experience Found:**")
+                            for i, exp in enumerate(profile_data.experiences[:3], 1):
+                                st.markdown(f"{i}. **{exp.get('title', 'Unknown')}** at {exp.get('company', 'Unknown')}")
+                                if exp.get('description'):
+                                    st.caption(exp.get('description', '')[:100] + "...")
+                        
+                        if profile_data.skills:
+                            st.markdown("**🎯 Skills Found:**")
+                            skills_text = ', '.join(profile_data.skills[:15])
+                            if len(profile_data.skills) > 15:
+                                skills_text += f" and {len(profile_data.skills) - 15} more..."
+                            st.caption(skills_text)
+                        
+                        # Generate analysis button
+                        if st.button("🚀 Generate Ultimate Profile", key="generate_from_pdf", use_container_width=True):
+                            with st.spinner("🎯 Generating ultimate profile template..."):
+                                target_industry = st.session_state.get('target_industry', 'Technology')
+                                target_role = st.session_state.get('target_role', 'Software Engineer')
+                                
+                                # Generate comprehensive report
+                                analysis_report = analyzer.generate_profile_analysis_report(
+                                    profile_data, target_industry, target_role
+                                )
+                                
+                                # Generate ultimate template
+                                ultimate_template = analyzer.create_ultimate_profile_template(
+                                    profile_data, target_industry, target_role
+                                )
+                                
+                                # Store in session state
+                                st.session_state.pdf_analysis_report = analysis_report
+                                st.session_state.ultimate_profile_template = ultimate_template
+                                st.session_state.optimization_report = ultimate_template
+                                
+                                # Create profile data for compatibility
+                                from src.vision_engine import LinkedInProfile
+                                st.session_state.profile_data = LinkedInProfile(
+                                    headline=f"{target_role} | {target_industry} | Professional",
+                                    about="Generated from PDF analysis",
+                                    experience=[
+                                        {
+                                            "title": exp.get('title', ''),
+                                            "company": exp.get('company', ''),
+                                            "dates": exp.get('dates', ''),
+                                            "description": exp.get('description', '')
+                                        }
+                                        for exp in profile_data.experiences
+                                    ],
+                                    skills=profile_data.skills
+                                )
+                                
+                                st.success("🎉 Ultimate profile generated successfully!")
+                                st.balloons()
+                    
+                    except ImportError as e:
+                        st.error(f"❌ PDF analysis libraries not available: {e}")
+                        st.info("📧 Install required libraries: pip install PyPDF2 pdfplumber pytesseract PyMuPDF Pillow")
+                    
+                    except Exception as e:
+                        st.error(f"❌ PDF analysis failed: {e}")
+                        st.info("📧 Please ensure your PDF is a valid resume/profile document")
+    
+    # Analysis button for images
+    if uploaded_files:
+        st.markdown("---")
+        
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            analyze_button = st.button(
+                "🔍 Analyze LinkedIn Screenshots",
+                type="primary",
+                use_container_width=True,
+                help="Analyze your LinkedIn profile screenshots to generate optimization recommendations"
+            )
+        
+        with col2:
+            if st.session_state.get('profile_data'):
+                if st.button("🗑️ Clear", use_container_width=True):
+                    st.session_state.profile_data = None
+                    st.session_state.optimization_report = None
+                    st.session_state.pdf_profile_data = None
+                    st.session_state.upload_method = None
+                    st.rerun()
+        
+        if analyze_button:
+            with st.spinner("🔍 Analyzing your LinkedIn profile..."):
+                try:
+                    # Convert uploaded files to base64
+                    base64_images = []
+                    for file in uploaded_files:
+                        image_bytes = file.read()
+                        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                        base64_images.append(base64_image)
+                    
+                    # Extract profile data
+                    vision_engine = VisionEngine()
+                    profile_data = vision_engine.extract_profile_data(base64_images)
+                    
+                    # Store in session state
+                    st.session_state.profile_data = profile_data
+                    st.session_state.upload_method = "images"
+                    
+                    st.success("✅ Profile analysis complete!")
+                    
+                    # Display extraction summary
+                    st.markdown("#### 📊 Extraction Summary")
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.metric("Headline", "✅" if profile_data.headline else "❌")
+                    with col2:
+                        st.metric("About", "✅" if profile_data.about else "❌")
+                    with col3:
+                        st.metric("Experience", f"{len(profile_data.experience)}")
+                    with col4:
+                        st.metric("Skills", f"{len(profile_data.skills)}")
+                    
+                except Exception as e:
+                    st.error(f"❌ Analysis failed: {str(e)}")
+                    st.info("💡 Please ensure your screenshots are clear and contain your LinkedIn profile information")
+    
+    # Show current upload method
+    if st.session_state.get('upload_method'):
+        st.markdown("---")
+        st.info(f"📤 Current upload method: **{st.session_state.upload_method.upper()}**")
+        
+        if st.session_state.get('pdf_profile_data'):
+            pdf_data = st.session_state.pdf_profile_data
+            st.markdown(f"📊 PDF Analysis: {pdf_data.metadata['experiences_count']} experiences, {pdf_data.metadata['skills_count']} skills extracted")
+
+
 def render_main_interface():
     """Render the main application interface"""
     st.markdown('<div class="main-header">💼 LinkedIn Profile Optimizer</div>', unsafe_allow_html=True)
@@ -288,29 +499,7 @@ def render_main_interface():
     to get personalized recommendations for headlines, about sections, experience bullets, and more.
     """)
     
-    # File Upload Section
-    st.markdown('<div class="section-header">📸 Upload Profile Screenshots</div>', unsafe_allow_html=True)
-    
-    uploaded_files = st.file_uploader(
-        "Upload LinkedIn profile screenshots (headline, about, experience, skills)",
-        type=['png', 'jpg', 'jpeg'],
-        accept_multiple_files=True,
-        help="Take clear screenshots of each section of your LinkedIn profile"
-    )
-    
-    if uploaded_files:
-        st.info(f"Uploaded {len(uploaded_files)} file(s)")
-        
-        # Display image previews
-        num_cols = min(4, len(uploaded_files))
-        cols = st.columns(num_cols)
-        for i, file in enumerate(uploaded_files):
-            with cols[i % num_cols]:  # Use modulo to prevent index out of range
-                st.image(file, caption=file.name, use_column_width=True)
-        
-        # Analyze Button
-        if st.button("🔍 Analyze Profile", type="primary", use_container_width=True):
-            analyze_profile(uploaded_files)
+    render_upload_section()
     
     # Display Results
     if st.session_state.optimization_report:
