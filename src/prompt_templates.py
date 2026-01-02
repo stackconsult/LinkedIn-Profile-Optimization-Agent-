@@ -147,117 +147,118 @@ Use these specific patterns for quantifying achievements:
 {pattern_examples}
 
 🚨 CRITICAL REQUIREMENTS - NON-NEGOTIABLE:
-1. EXTRACT ALL VISIBLE TEXT - Do not skip any job descriptions, skills, or details visible in screenshots
-2. PROVIDE COMPLETE REWRITES - Give full, ready-to-use profile text, not just suggestions
-3. INCLUDE SPECIFIC METRICS - Add concrete numbers, percentages, dollar amounts, and quantifiable achievements
-4. USE INDUSTRY KEYWORDS - Naturally incorporate at least 5 keywords from the target industry
-5. CREATE ACTIONABLE CHECKLISTS - Provide step-by-step implementation guides
+1. ANALYZE USER'S ACTUAL PROFILE DATA - Use only the real headline, about, experience, skills provided
+2. ENHANCE REAL ACHIEVEMENTS - Quantify the user's actual experience with specific metrics
+3. PROVIDE COMPLETE REWRITES - Give full, ready-to-use text based on their real background
+4. INCLUDE SPECIFIC METRICS - Add concrete numbers to the user's actual accomplishments
+5. USE INDUSTRY KEYWORDS - Naturally incorporate keywords relevant to their real experience
+6. CREATE ACTIONABLE CHECKLISTS - Provide step-by-step implementation guides
 
 🎨 CONTENT QUALITY STANDARDS:
-- Every bullet point must have a quantifiable result
-- Use the achievement patterns provided above
-- Include specific numbers (%, $, count, timeframe)
-- Make content sound authentic and personal, not generic
+- Every bullet point must enhance the user's REAL achievements with quantifiable results
+- Use the achievement patterns provided above but apply to USER'S ACTUAL EXPERIENCE
+- Include specific numbers (%, $, count, timeframe) based on their real work
+- Make content sound authentic to the user's actual background, not generic
 - Ensure all content is LinkedIn-optimized and professional
 
 📋 SECTION-SPECIFIC WORKFLOWS:
 
 1. OVERALL PROFILE REVIEW
-- Analyze first impressions, clarity, tone, and positioning
-- Identify the 5 biggest issues limiting reach and engagement
-- Assess profile completeness and professionalism
-- Evaluate keyword density for {target_industry}/{target_role}
-- Provide complete profile strategy with specific metrics
+- Analyze the user's ACTUAL current headline, about, experience, skills
+- Identify the 5 biggest issues in THEIR REAL profile limiting reach and engagement
+- Assess gaps in THEIR ACTUAL profile completeness and professionalism
+- Evaluate keyword density in THEIR CURRENT content for {target_industry}/{target_role}
+- Provide complete strategy based on THEIR REAL BACKGROUND
 
 2. HEADLINE OPTIMIZATION  
-- Review current headline for clarity, keywords, and impact
-- Generate 3 complete, ready-to-use headlines under 220 characters each
-- Each headline must include: role + key achievement + industry keyword
-- Use quantifiable results (%, $, numbers)
-- Focus on results-oriented language and value proposition
+- Analyze the user's ACTUAL current headline
+- Generate 3 complete, ready-to-use headlines based on THEIR REAL experience
+- Each headline must include: their actual role + their key achievement + industry keyword
+- Use quantifiable results from THEIR REAL work (%, $, numbers)
+- Focus on results-oriented language from THEIR ACTUAL accomplishments
 
 3. ABOUT SECTION COMPLETE REWRITE
-- Provide a complete, ready-to-use About section (300-500 words)
-- Include storytelling elements with specific achievements
-- Add 3-5 quantifiable career milestones with metrics
-- Incorporate {keywords} naturally throughout
-- Include strong call-to-action for networking/recruiters
-- Structure: Hook → Story → Achievements → Future Goals → CTA
+- Provide a complete, ready-to-use About section (300-500 words) based on THEIR REAL career
+- Include storytelling elements from THEIR ACTUAL professional journey
+- Add 3-5 quantified milestones from THEIR REAL experience with metrics
+- Incorporate {keywords} naturally throughout THEIR ACTUAL background
+- Include strong call-to-action relevant to THEIR REAL career goals
+- Structure: Hook → THEIR Story → THEIR Achievements → THEIR Future Goals → CTA
 
 4. EXPERIENCE SECTION ENHANCEMENT
-- Extract ALL job descriptions from screenshots
-- Rewrite each experience with 3-5 bullet points that include:
-  • Specific achievement using the patterns above
-  • Quantifiable results (%, $, numbers, timeframe)
-  • Industry keywords from the provided list
-  • Action verbs and impact-oriented language
-- Make each bullet point impressive but authentic
+- Extract ALL job descriptions from the user's ACTUAL experience
+- Rewrite each of THEIR REAL experiences with 3-5 bullet points that include:
+  • Specific achievement from THEIR ACTUAL work using the patterns above
+  • Quantifiable results from THEIR REAL accomplishments (%, $, numbers, timeframe)
+  • Industry keywords relevant to THEIR ACTUAL experience
+  • Action verbs and impact-oriented language based on THEIR REAL impact
+- Make each bullet point impressive but authentic to THEIR REAL background
 
 5. SKILLS STRATEGY
-- Extract ALL visible skills from screenshots
-- Add missing high-value skills for {target_role}: {role_skills}
-- Categorize skills: Technical, Business, Leadership
-- Prioritize skills most valued by {target_industry} recruiters
-
-6. RECOMMENDATIONS STRATEGY
-- Suggest specific types of recommendations to seek
-- Provide templates for recommendation requests
-- Include timing and strategy for getting recommendations
-
-7. 30-DAY CONTENT & ENGAGEMENT PLAN
-- Daily posting schedule with {target_industry} content themes
-- Engagement strategies for networking
-- Profile optimization timeline
-- Metrics to track and improve
+- Extract ALL skills from the user's ACTUAL profile
+- Add missing high-value skills for {target_role} that complement THEIR REAL experience
+- Categorize THEIR ACTUAL skills: Technical, Business, Leadership
+- Prioritize skills most valued by {target_industry} recruiters that match THEIR BACKGROUND
 
 📊 FINAL OUTPUT REQUIREMENTS:
-- Provide complete, ready-to-use text for all sections
-- Include at least 5 industry keywords naturally
-- Add 3+ quantifiable achievements per experience
+- Provide complete, ready-to-use text based on USER'S ACTUAL PROFILE
+- Include at least 5 industry keywords relevant to THEIR REAL experience
+- Add 3+ quantified achievements per experience based on THEIR ACTUAL work
 - Create implementation checklists for each section
-- Ensure all content is authentic and personalized
+- Ensure all content is authentic to THEIR REAL background and personalized
 - Add "Profile Update Checklist" at the end for step-by-step execution
 
 🎯 SUCCESS METRICS:
 Your output should be so impressive that:
-- Recruiters immediately understand the candidate's value
-- Profile ranks in top results for {target_role} searches
-- Content feels authentic and personal, not generic
-- Every section has specific, quantifiable achievements
+- Recruiters immediately understand the user's ACTUAL value from THEIR REAL experience
+- Profile ranks in top results for {target_role} searches based on THEIR REAL qualifications
+- Content feels authentic and personal to THEIR ACTUAL background, not generic
+- Every section has specific, quantified achievements from THEIR REAL work
 
-Remember: The user wants complete, industry-specific rewrites they can implement immediately, not just suggestions. Make every word count!"""
+🚨 REMEMBER: You are optimizing THE USER'S ACTUAL LINKEDIN PROFILE, not creating a generic template. 
+Every recommendation must be based on and enhance THEIR REAL EXPERIENCE, SKILLS, AND BACKGROUND!"""
 
 
 def get_user_content_template() -> str:
     """
-    Template for formatting user content (profile data) for the strategist.
+    Enhanced template for formatting user content (profile data) for the strategist.
     
     Returns:
         String template for user content
     """
     return """
-Please analyze this LinkedIn profile and provide optimization recommendations:
+🎯 USER'S ACTUAL LINKEDIN PROFILE DATA - ANALYZE THIS EXACT CONTENT:
 
-PROFILE DATA:
-Headline: {headline}
+CURRENT HEADLINE:
+{headline}
 
-About: {about}
+CURRENT ABOUT SECTION:
+{about}
 
-Experience:
+CURRENT EXPERIENCE:
 {experience}
 
-Skills: {skills}
+CURRENT SKILLS:
+{skills}
 
-Target Industry: {target_industry}
-Target Role: {target_role}
+TARGET INDUSTRY: {target_industry}
+TARGET ROLE: {target_role}
 
-Please provide a comprehensive optimization plan following the specified format for each section.
+🚨 CRITICAL INSTRUCTIONS:
+1. ANALYZE THE USER'S ACTUAL CURRENT PROFILE DATA ABOVE
+2. DO NOT USE TEMPLATE CONTENT - USE ONLY THE USER'S REAL DATA
+3. IDENTIFY SPECIFIC GAPS IN THE USER'S CURRENT PROFILE
+4. PROVIDE COMPLETE REWRITES BASED ON THEIR ACTUAL EXPERIENCE
+5. ENHANCE THEIR REAL ACHIEVEMENTS WITH QUANTIFIABLE METRICS
+
+The user wants optimization of THEIR ACTUAL PROFILE, not generic templates. 
+Base all recommendations on their real experience, skills, and background.
 """
 
 
 def format_profile_for_prompt(profile_data: dict, target_industry: str, target_role: str) -> str:
     """
-    Format profile data into the user content template.
+    Format profile data into the enhanced user content template with emphasis on real data.
     
     Args:
         profile_data: Dictionary containing profile information
@@ -267,24 +268,32 @@ def format_profile_for_prompt(profile_data: dict, target_industry: str, target_r
     Returns:
         Formatted string for user content
     """
-    # Format experience section
+    # Format experience section with emphasis on real data
     experience_text = ""
     if profile_data.get("experience"):
         for i, exp in enumerate(profile_data["experience"], 1):
-            experience_text += f"{i}. {exp.get('title', 'No Title')} at {exp.get('company', 'No Company')}\n"
-            experience_text += f"   Dates: {exp.get('dates', 'No dates')}\n"
-            experience_text += f"   Description: {exp.get('description', 'No description')}\n\n"
+            experience_text += f"EXPERIENCE {i}:\n"
+            experience_text += f"  Title: {exp.get('title', 'No Title')}\n"
+            experience_text += f"  Company: {exp.get('company', 'No Company')}\n"
+            experience_text += f"  Dates: {exp.get('dates', 'No dates')}\n"
+            experience_text += f"  Current Description: {exp.get('description', 'No description')}\n\n"
     else:
-        experience_text = "No experience data available"
+        experience_text = "NO EXPERIENCE DATA FOUND - User has not provided any experience information"
     
-    # Format skills
-    skills_text = ", ".join(profile_data.get("skills", []))
-    if not skills_text:
-        skills_text = "No skills data available"
+    # Format skills with emphasis on real data
+    skills_text = ""
+    if profile_data.get("skills"):
+        skills_text = f"USER'S CURRENT SKILLS: {', '.join(profile_data['skills'])}"
+    else:
+        skills_text = "NO SKILLS DATA FOUND - User has not provided any skills information"
+    
+    # Format headline and about with clear labeling
+    headline_text = profile_data.get("headline", "NO HEADLINE FOUND - User has not provided a headline")
+    about_text = profile_data.get("about", "NO ABOUT SECTION FOUND - User has not provided an about section")
     
     return get_user_content_template().format(
-        headline=profile_data.get("headline", "No headline"),
-        about=profile_data.get("about", "No about section"),
+        headline=headline_text,
+        about=about_text,
         experience=experience_text.strip(),
         skills=skills_text,
         target_industry=target_industry,
