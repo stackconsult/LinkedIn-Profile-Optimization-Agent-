@@ -283,13 +283,6 @@ def render_upload_section():
     """Render file upload section with PDF and image options"""
     st.markdown('<div class="section-header">📤 Upload Your Profile</div>', unsafe_allow_html=True)
     
-    # Check PDF library availability
-    try:
-        from src.pdf_analyzer import PDF_AVAILABLE
-        pdf_available = PDF_AVAILABLE
-    except ImportError:
-        pdf_available = False
-    
     # Upload options
     col1, col2 = st.columns(2)
     
@@ -316,143 +309,119 @@ def render_upload_section():
                     st.image(file, caption=f"Image {i+1}", use_column_width=True)
     
     with col2:
-        if pdf_available:
-            st.markdown("### 📄 PDF Profile Upload")
-            st.info("Upload your resume or profile PDF for complete analysis")
+        st.markdown("### 📄 PDF Profile Upload")
+        st.info("Upload your resume or profile PDF for complete analysis")
+        
+        pdf_file = st.file_uploader(
+            "Choose PDF file",
+            type=['pdf'],
+            key="pdf_uploader",
+            help="Upload your resume, CV, or profile PDF for comprehensive analysis and extraction"
+        )
+        
+        if pdf_file:
+            st.success("✅ PDF uploaded successfully")
             
-            pdf_file = st.file_uploader(
-                "Choose PDF file",
-                type=['pdf'],
-                key="pdf_uploader",
-                help="Upload your resume, CV, or profile PDF for comprehensive analysis and extraction"
-            )
+            # Display PDF info
+            st.markdown("**File Info:**")
+            st.code(f"Name: {pdf_file.name}\nSize: {pdf_file.size / 1024:.1f} KB")
             
-            if pdf_file:
-                st.success("✅ PDF uploaded successfully")
-                
-                # Display PDF info
-                st.markdown("**File Info:**")
-                st.code(f"Name: {pdf_file.name}\nSize: {pdf_file.size / 1024:.1f} KB")
-                
-                # PDF analysis option
-                if st.button("🔍 Analyze PDF Profile", key="analyze_pdf", use_container_width=True):
-                    with st.spinner("🔍 Analyzing PDF profile with OCR and deep research..."):
-                        try:
-                            from src.pdf_analyzer import PDFProfileAnalyzer
-                            
-                            analyzer = PDFProfileAnalyzer()
-                            profile_data = analyzer.analyze_pdf(pdf_file)
-                            
-                            # Store in session state
-                            st.session_state.pdf_profile_data = profile_data
-                            st.session_state.upload_method = "pdf"
-                            
-                            # Display analysis results
-                            st.success("✅ PDF analysis complete!")
-                            
-                            # Show extraction summary
-                            st.markdown("#### 📊 Extraction Summary")
-                            col1, col2, col3, col4 = st.columns(4)
-                            
-                            with col1:
-                                st.metric("Characters", profile_data.metadata['total_characters'])
-                            with col2:
-                                st.metric("Words", profile_data.metadata['word_count'])
-                            with col3:
-                                st.metric("Experiences", profile_data.metadata['experiences_count'])
-                            with col4:
-                                st.metric("Skills", profile_data.metadata['skills_count'])
-                            
-                            # Show extracted sections
-                            st.markdown("#### 📋 Extracted Content")
-                            
-                            if profile_data.experiences:
-                                st.markdown("**💼 Experience Found:**")
-                                for i, exp in enumerate(profile_data.experiences[:3], 1):
-                                    st.markdown(f"{i}. **{exp.get('title', 'Unknown')}** at {exp.get('company', 'Unknown')}")
-                                    if exp.get('description'):
-                                        st.caption(exp.get('description', '')[:100] + "...")
-                            
-                            if profile_data.skills:
-                                st.markdown("**🎯 Skills Found:**")
-                                skills_text = ', '.join(profile_data.skills[:15])
-                                if len(profile_data.skills) > 15:
-                                    skills_text += f" and {len(profile_data.skills) - 15} more..."
-                                st.caption(skills_text)
-                            
-                            # Generate analysis button
-                            if st.button("🚀 Generate Ultimate Profile", key="generate_from_pdf", use_container_width=True):
-                                with st.spinner("🎯 Generating ultimate profile template..."):
-                                    target_industry = st.session_state.get('target_industry', 'Technology')
-                                    target_role = st.session_state.get('target_role', 'Software Engineer')
-                                    
-                                    # Generate comprehensive report
-                                    analysis_report = analyzer.generate_profile_analysis_report(
-                                        profile_data, target_industry, target_role
-                                    )
-                                    
-                                    # Generate ultimate template
-                                    ultimate_template = analyzer.create_ultimate_profile_template(
-                                        profile_data, target_industry, target_role
-                                    )
-                                    
-                                    # Store in session state
-                                    st.session_state.pdf_analysis_report = analysis_report
-                                    st.session_state.ultimate_profile_template = ultimate_template
-                                    st.session_state.optimization_report = ultimate_template
-                                    
-                                    # Create profile data for compatibility
-                                    from src.vision_engine import LinkedInProfile
-                                    st.session_state.profile_data = LinkedInProfile(
-                                        headline=f"{target_role} | {target_industry} | Professional",
-                                        about="Generated from PDF analysis",
-                                        experience=[
-                                            {
-                                                "title": exp.get('title', ''),
-                                                "company": exp.get('company', ''),
-                                                "dates": exp.get('dates', ''),
-                                                "description": exp.get('description', '')
-                                            }
-                                            for exp in profile_data.experiences
-                                        ],
-                                        skills=profile_data.skills
-                                    )
-                                    
-                                    st.success("🎉 Ultimate profile generated successfully!")
-                                    st.balloons()
+            # PDF analysis option
+            if st.button("🔍 Analyze PDF Profile", key="analyze_pdf", use_container_width=True):
+                with st.spinner("🔍 Analyzing PDF profile with OCR and deep research..."):
+                    try:
+                        from src.pdf_analyzer import PDFProfileAnalyzer
                         
-                        except ImportError as e:
-                            st.error(f"❌ PDF analysis libraries not available: {e}")
-                            st.info("📧 For PDF support, install: pip install PyPDF2 pdfplumber")
-                            st.info("📧 For OCR support, install: pip install pytesseract PyMuPDF Pillow")
-                            st.info("💡 You can still use image screenshots for profile analysis")
+                        analyzer = PDFProfileAnalyzer()
+                        profile_data = analyzer.analyze_pdf(pdf_file)
                         
-                        except Exception as e:
-                            st.error(f"❌ PDF analysis failed: {e}")
-                            st.info("📧 Please ensure your PDF is a valid resume/profile document")
-                            st.info("💡 You can try using image screenshots instead")
-        else:
-            # PDF functionality not available
-            st.markdown("### 📄 PDF Profile Upload")
-            st.warning("⚠️ PDF processing libraries not available")
-            st.info("💡 PDF upload requires additional libraries for local development")
-            st.info("📷 Use LinkedIn screenshots for profile analysis")
-            
-            # Show helpful info
-            with st.expander("📚 How to enable PDF support (Local Development)", expanded=False):
-                st.markdown("""
-                **Install PDF processing libraries:**
-                ```bash
-                pip install PyPDF2 pdfplumber
-                ```
-                
-                **Install OCR libraries (optional):**
-                ```bash
-                pip install pytesseract PyMuPDF Pillow
-                ```
-                
-                **Note:** PDF support is optional - the app works perfectly with image screenshots!
-                """)
+                        # Store in session state
+                        st.session_state.pdf_profile_data = profile_data
+                        st.session_state.upload_method = "pdf"
+                        
+                        # Display analysis results
+                        st.success("✅ PDF analysis complete!")
+                        
+                        # Show extraction summary
+                        st.markdown("#### 📊 Extraction Summary")
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        with col1:
+                            st.metric("Characters", profile_data.metadata['total_characters'])
+                        with col2:
+                            st.metric("Words", profile_data.metadata['word_count'])
+                        with col3:
+                            st.metric("Experiences", profile_data.metadata['experiences_count'])
+                        with col4:
+                            st.metric("Skills", profile_data.metadata['skills_count'])
+                        
+                        # Show extracted sections
+                        st.markdown("#### 📋 Extracted Content")
+                        
+                        if profile_data.experiences:
+                            st.markdown("**💼 Experience Found:**")
+                            for i, exp in enumerate(profile_data.experiences[:3], 1):
+                                st.markdown(f"{i}. **{exp.get('title', 'Unknown')}** at {exp.get('company', 'Unknown')}")
+                                if exp.get('description'):
+                                    st.caption(exp.get('description', '')[:100] + "...")
+                        
+                        if profile_data.skills:
+                            st.markdown("**🎯 Skills Found:**")
+                            skills_text = ', '.join(profile_data.skills[:15])
+                            if len(profile_data.skills) > 15:
+                                skills_text += f" and {len(profile_data.skills) - 15} more..."
+                            st.caption(skills_text)
+                        
+                        # Generate analysis button
+                        if st.button("🚀 Generate Ultimate Profile", key="generate_from_pdf", use_container_width=True):
+                            with st.spinner("🎯 Generating ultimate profile template..."):
+                                target_industry = st.session_state.get('target_industry', 'Technology')
+                                target_role = st.session_state.get('target_role', 'Software Engineer')
+                                
+                                # Generate comprehensive report
+                                analysis_report = analyzer.generate_profile_analysis_report(
+                                    profile_data, target_industry, target_role
+                                )
+                                
+                                # Generate ultimate template
+                                ultimate_template = analyzer.create_ultimate_profile_template(
+                                    profile_data, target_industry, target_role
+                                )
+                                
+                                # Store in session state
+                                st.session_state.pdf_analysis_report = analysis_report
+                                st.session_state.ultimate_profile_template = ultimate_template
+                                st.session_state.optimization_report = ultimate_template
+                                
+                                # Create profile data for compatibility
+                                from src.vision_engine import LinkedInProfile
+                                st.session_state.profile_data = LinkedInProfile(
+                                    headline=f"{target_role} | {target_industry} | Professional",
+                                    about="Generated from PDF analysis",
+                                    experience=[
+                                        {
+                                            "title": exp.get('title', ''),
+                                            "company": exp.get('company', ''),
+                                            "dates": exp.get('dates', ''),
+                                            "description": exp.get('description', '')
+                                        }
+                                        for exp in profile_data.experiences
+                                    ],
+                                    skills=profile_data.skills
+                                )
+                                
+                                st.success("🎉 Ultimate profile generated successfully!")
+                                st.balloons()
+                    
+                    except ImportError as e:
+                        st.error(f"❌ PDF analysis libraries not available: {e}")
+                        st.info("📧 Installing required libraries...")
+                        st.info("💡 PDF processing is a core feature - libraries should be automatically installed")
+                    
+                    except Exception as e:
+                        st.error(f"❌ PDF analysis failed: {e}")
+                        st.info("📧 Please ensure your PDF is a valid resume/profile document")
+                        st.info("💡 Try using image screenshots if PDF analysis continues to fail")
     
     # Analysis button for images
     if uploaded_files:

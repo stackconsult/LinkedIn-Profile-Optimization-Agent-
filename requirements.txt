@@ -5,9 +5,11 @@ pydantic>=2.5.0
 pydantic-settings>=2.1.0
 requests>=2.31.0
 
-# Optional PDF Processing (install if needed)
-# PyPDF2>=3.0.1
-# pdfplumber>=0.10.0
-# pytesseract>=0.3.10
-# PyMuPDF>=1.23.0
-# Pillow>=10.0.0
+# Core PDF Processing Libraries
+PyPDF2>=3.0.1
+pdfplumber>=0.10.0
+
+# OCR Libraries for Enhanced PDF Processing
+pytesseract>=0.3.10
+PyMuPDF>=1.23.0
+Pillow>=10.0.0
