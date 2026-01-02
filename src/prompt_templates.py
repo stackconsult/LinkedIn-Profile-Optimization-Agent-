@@ -301,6 +301,212 @@ def format_profile_for_prompt(profile_data: dict, target_industry: str, target_r
     )
 
 
+def format_perfect_profile_prompt(
+    current_profile: dict, 
+    perfect_template: dict, 
+    gaps: list,
+    target_industry: str, 
+    target_role: str
+) -> str:
+    """
+    Format a comprehensive prompt that includes current profile, perfect template, gaps,
+    and generates polished, filled-in examples.
+    
+    Args:
+        current_profile: User's current profile data
+        perfect_template: Perfect profile template from gap analysis
+        gaps: List of identified gaps
+        target_industry: Target industry
+        target_role: Target role
+        
+    Returns:
+        Formatted string for comprehensive profile optimization
+    """
+    
+    # Format current profile
+    current_headline = current_profile.get('headline', 'No headline')
+    current_about = current_profile.get('about', 'No about section')
+    current_experience = current_profile.get('experience', [])
+    current_skills = current_profile.get('skills', [])
+    
+    # Format experience for display
+    exp_text = ""
+    for i, exp in enumerate(current_experience, 1):
+        exp_text += f"  {i}. {exp.get('title', 'No Title')} at {exp.get('company', 'No Company')}\n"
+        exp_text += f"     {exp.get('description', 'No description')[:200]}...\n"
+    
+    # Format gaps by category
+    gap_text = ""
+    for gap in gaps[:10]:  # Top 10 gaps
+        gap_text += f"  • {gap['category'].upper()}: {gap['action_required']}\n"
+    
+    # Extract perfect template elements
+    ideal_headline = perfect_template.get('headline', {}).get('ideal_template', 'Role | Specialty | Impact')
+    ideal_about_structure = perfect_template.get('about', {}).get('structure', [])
+    ideal_experience_format = perfect_template.get('experience', {}).get('must_haves', [])
+    ideal_skills = perfect_template.get('skills', {}).get('must_have', [])
+    
+    prompt = f"""
+=== COMPREHENSIVE LINKEDIN PROFILE OPTIMIZATION ===
+
+TARGET ROLE: {target_role} in {target_industry}
+
+=== CURRENT PROFILE ANALYSIS ===
+HEADLINE: "{current_headline}"
+ABOUT: "{current_about[:300]}..."
+EXPERIENCE:
+{exp_text}
+SKILLS: {', '.join(current_skills[:20])}{'...' if len(current_skills) > 20 else ''}
+
+=== PERFECT PROFILE TEMPLATE ===
+IDEAL HEADLINE FORMAT: {ideal_headline}
+IDEAL ABOUT STRUCTURE:
+{chr(10).join(f'  {i+1}. {item}' for i, item in enumerate(ideal_about_structure))}
+IDEAL EXPERIENCE FORMAT:
+{chr(10).join(f'  • {item}' for item in ideal_experience_format)}
+IDEAL SKILLS: {', '.join(ideal_skills[:10])}{'...' if len(ideal_skills) > 10 else ''}
+
+=== IDENTIFIED GAPS (Top 10) ===
+{gap_text}
+
+=== YOUR TASK ===
+Generate a COMPLETE, POLISHED LinkedIn profile optimization that:
+
+1. **PROVIDES SPECIFIC, ACTIONABLE IMPROVEMENTS** for each section based on the gaps identified
+2. **CREATES A PERFECT EXAMPLE PROFILE** that fills in all template blanks with realistic, compelling content
+3. **MAINTAINS THE USER'S AUTHENTIC EXPERIENCE** while enhancing it with industry best practices
+4. **INCLUDES QUANTIFIABLE METRICS** and specific achievements
+5. **FOLLOWS THE PERFECT TEMPLATE STRUCTURE** exactly
+
+=== REQUIRED OUTPUT FORMAT ===
+
+## 🎯 OPTIMIZED HEADLINE
+[Provide 3 polished headline options that follow the ideal template and incorporate user's real experience]
+
+## 📄 OPTIMIZED ABOUT SECTION
+[Write a complete, polished about section (200-300 words) that follows the ideal structure and enhances the user's real experience]
+
+## 💼 OPTIMIZED EXPERIENCE
+[For each current experience, provide 3-5 enhanced bullet points with quantified metrics and strong action verbs]
+
+## 🎯 OPTIMIZED SKILLS SECTION
+[List 50-100 optimized skills including current skills plus recommended ones, organized by category]
+
+## 🏆 PERFECT PROFILE EXAMPLE
+[Create a complete example of what the user's PERFECT LinkedIn profile should look like, filling in all template blanks with compelling, realistic content that matches their background]
+
+## 📋 IMPLEMENTATION CHECKLIST
+[Provide a step-by-step checklist for implementing these optimizations]
+
+=== CRITICAL REQUIREMENTS ===
+- NO GENERIC TEMPLATES - All content must be tailored to the user's actual experience
+- INCLUDE SPECIFIC METRICS (percentages, dollar amounts, team sizes, etc.)
+- MAINTAIN AUTHENTICITY while enhancing impact
+- FOLLOW INDUSTRY BEST PRACTICES for {target_role} in {target_industry}
+- MAKE THE PERFECT EXAMPLE INSPIRING AND ACHIEVABLE
+
+Generate this comprehensive optimization now.
+"""
+    
+    return prompt
+
+
+def format_gap_analysis_prompt(
+    current_profile: dict,
+    analysis_results: dict,
+    target_industry: str,
+    target_role: str
+) -> str:
+    """
+    Format a prompt specifically for generating polished gap analysis and improvements.
+    
+    Args:
+        current_profile: User's current profile data
+        analysis_results: Results from gap analysis
+        target_industry: Target industry
+        target_role: Target role
+        
+    Returns:
+        Formatted string for gap analysis optimization
+    """
+    
+    completeness_score = analysis_results.get('completeness_score', 0)
+    quick_wins = analysis_results.get('quick_wins', [])
+    high_impact = analysis_results.get('high_impact', [])
+    missing = analysis_results.get('missing_to_perfect', {})
+    template = analysis_results.get('perfect_template', {})
+    
+    # Format quick wins
+    quick_wins_text = "\n".join(f"  • {gap['action_required']}" for gap in quick_wins[:5])
+    
+    # Format high impact gaps
+    high_impact_text = "\n".join(f"  • {gap['action_required']}" for gap in high_impact[:5])
+    
+    # Format missing items by category
+    missing_text = ""
+    for category, items in missing.items():
+        if items:
+            missing_text += f"\n{category.upper()}:\n"
+            for item in items[:3]:  # Top 3 per category
+                missing_text += f"  • {item}\n"
+    
+    prompt = f"""
+=== POLISHED GAP ANALYSIS & PROFILE OPTIMIZATION ===
+
+TARGET: {target_role} in {target_industry}
+CURRENT COMPLETENESS SCORE: {completeness_score}/100
+
+=== QUICK WINS (Immediate Improvements) ===
+{quick_wins_text}
+
+=== HIGH IMPACT GAPS (Priority Focus) ===
+{high_impact_text}
+
+=== MISSING FOR PERFECT PROFILE ===
+{missing_text}
+
+=== YOUR TASK ===
+Generate a POLISHED, ACTIONABLE optimization plan that:
+
+1. **TRANSFORMS GAPS INTO SPECIFIC ACTIONS** - Convert each gap into a concrete, implementable improvement
+2. **PROVIDES FILLED-IN EXAMPLES** - Show exactly what each section should look like with real content
+3. **CREATES A COMPLETE PERFECT PROFILE** - Write the full optimized profile as if the user implemented everything
+4. **MAINTAINS AUTHENTICITY** - Enhance the user's real experience, don't replace it with generic content
+
+=== REQUIRED OUTPUT ===
+
+## 🚀 IMMEDIATE ACTION PLAN
+[Convert quick wins into step-by-step actions with specific examples]
+
+## 🎯 PRIORITY IMPROVEMENTS  
+[Transform high-impact gaps into detailed improvements with filled-in examples]
+
+## 📋 COMPLETE OPTIMIZATION ROADMAP
+[Provide a comprehensive roadmap with timelines and specific content examples]
+
+## 🏆 PERFECT PROFILE SHOWCASE
+[Write the complete, polished LinkedIn profile that incorporates all improvements]
+- Headline: 3 optimized options
+- About: Complete polished version
+- Experience: Enhanced bullet points for each role
+- Skills: Comprehensive optimized list
+
+## 💡 IMPLEMENTATION GUIDE
+[Provide specific, copy-paste ready content for each section]
+
+=== QUALITY STANDARDS ===
+- All content must be polished and professional
+- Include specific metrics and achievements
+- Follow {target_role} best practices in {target_industry}
+- Make content inspiring yet achievable
+- No generic templates or placeholders
+
+Generate this polished optimization now.
+"""
+    
+    return prompt
+
+
 def get_followup_prompt_template() -> str:
     """
     Template for follow-up questions and additional context.

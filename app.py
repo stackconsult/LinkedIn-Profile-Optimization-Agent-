@@ -1147,6 +1147,98 @@ def render_unified_results():
         
         st.markdown("---")
         
+        # ========== AI-POWERED PERFECT PROFILE OPTIMIZATION ==========
+        st.markdown("#### 🤖 AI-Powered Perfect Profile Optimization")
+        st.info("Generate polished, filled-in examples and complete optimized profile using AI.")
+        
+        try:
+            from src.strategy_engine import StrategyEngine
+            strategy_engine = get_strategy_engine()
+            
+            if profile and strategy_engine:
+                # Get analysis results
+                analysis = gap_analyzer.analyze_gaps(profile_dict, target_industry, target_role)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🎯 Generate Perfect Profile with AI", use_container_width=True):
+                        with st.spinner("🤖 Generating comprehensive perfect profile optimization..."):
+                            try:
+                                # Generate perfect profile optimization
+                                optimization = strategy_engine.generate_perfect_profile_optimization(
+                                    profile_dict, 
+                                    analysis['perfect_template'], 
+                                    analysis['gaps'], 
+                                    target_industry, 
+                                    target_role
+                                )
+                                
+                                st.session_state['perfect_profile_optimization'] = optimization
+                                st.success("✅ Perfect profile optimization generated!")
+                                
+                            except Exception as e:
+                                st.error(f"❌ Perfect profile generation failed: {str(e)}")
+                
+                with col2:
+                    if st.button("📋 Generate Gap Analysis with AI", use_container_width=True):
+                        with st.spinner("🤖 Generating polished gap analysis..."):
+                            try:
+                                # Generate gap analysis optimization
+                                gap_optimization = strategy_engine.generate_gap_analysis_optimization(
+                                    profile_dict,
+                                    analysis,
+                                    target_industry,
+                                    target_role
+                                )
+                                
+                                st.session_state['gap_analysis_optimization'] = gap_optimization
+                                st.success("✅ Gap analysis optimization generated!")
+                                
+                            except Exception as e:
+                                st.error(f"❌ Gap analysis generation failed: {str(e)}")
+                
+                # Display AI-generated optimizations
+                if 'perfect_profile_optimization' in st.session_state:
+                    st.markdown("##### 🏆 AI-Generated Perfect Profile")
+                    st.markdown(st.session_state['perfect_profile_optimization'])
+                    
+                    # Download option
+                    st.download_button(
+                        label="📥 Download Perfect Profile Optimization",
+                        data=st.session_state['perfect_profile_optimization'],
+                        file_name=f"perfect_profile_optimization_{target_role.replace(' ', '_')}.md",
+                        mime="text/markdown"
+                    )
+                
+                if 'gap_analysis_optimization' in st.session_state:
+                    st.markdown("##### 📊 AI-Generated Gap Analysis")
+                    st.markdown(st.session_state['gap_analysis_optimization'])
+                    
+                    # Download option
+                    st.download_button(
+                        label="📥 Download Gap Analysis Optimization",
+                        data=st.session_state['gap_analysis_optimization'],
+                        file_name=f"gap_analysis_optimization_{target_role.replace(' ', '_')}.md",
+                        mime="text/markdown"
+                    )
+                
+                # Clear button
+                if st.button("🗑️ Clear AI Optimizations", use_container_width=True):
+                    if 'perfect_profile_optimization' in st.session_state:
+                        del st.session_state['perfect_profile_optimization']
+                    if 'gap_analysis_optimization' in st.session_state:
+                        del st.session_state['gap_analysis_optimization']
+                    st.success("✅ AI optimizations cleared!")
+            else:
+                st.warning("📤 Please upload your profile first to generate AI optimizations")
+        
+        except ImportError as e:
+            st.info(f"🤖 AI optimization feature loading... ({e})")
+        except Exception as e:
+            st.error(f"❌ AI optimization failed: {str(e)}")
+        
+        st.markdown("---")
+        
         # Feedback Section
         st.markdown("#### 📝 Feedback & Rating")
         

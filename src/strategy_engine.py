@@ -3,7 +3,7 @@ Enhanced strategy engine for LinkedIn profile optimization
 """
 
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, List, Any, Optional
 from openai import OpenAI
 
 # Optional together library
@@ -163,6 +163,174 @@ class StrategyEngine:
         )
         
         return strategy
+    
+    def generate_perfect_profile_optimization(
+        self,
+        current_profile: Dict[str, Any],
+        perfect_template: Dict[str, Any],
+        gaps: List[Dict[str, Any]],
+        target_industry: str,
+        target_role: str,
+        model_choice: str = "gpt4o"
+    ) -> str:
+        """
+        Generate comprehensive profile optimization using perfect template and gap analysis.
+        
+        Args:
+            current_profile: User's current profile data
+            perfect_template: Perfect profile template from gap analysis
+            gaps: List of identified gaps
+            target_industry: Target industry
+            target_role: Target role
+            model_choice: Model to use for generation
+            
+        Returns:
+            Comprehensive optimization with filled-in examples
+        """
+        from src.prompt_templates import format_perfect_profile_prompt
+        
+        # Format comprehensive prompt
+        formatted_prompt = format_perfect_profile_prompt(
+            current_profile, perfect_template, gaps, target_industry, target_role
+        )
+        
+        # Get model ID
+        model_id = PromptFormatter.get_model_id(model_choice)
+        
+        # Call appropriate model
+        if model_choice == "gpt4o":
+            response = self._call_openai_model(formatted_prompt, model_id)
+        elif model_choice == "llama3_custom":
+            response = self._call_together_model(formatted_prompt, model_id)
+        else:
+            raise ValueError(f"Unknown model choice: {model_choice}")
+        
+        return response
+    
+    def generate_gap_analysis_optimization(
+        self,
+        current_profile: Dict[str, Any],
+        analysis_results: Dict[str, Any],
+        target_industry: str,
+        target_role: str,
+        model_choice: str = "gpt4o"
+    ) -> str:
+        """
+        Generate polished gap analysis optimization with filled-in examples.
+        
+        Args:
+            current_profile: User's current profile data
+            analysis_results: Complete gap analysis results
+            target_industry: Target industry
+            target_role: Target role
+            model_choice: Model to use for generation
+            
+        Returns:
+            Polished optimization with specific examples
+        """
+        from src.prompt_templates import format_gap_analysis_prompt
+        
+        # Format gap analysis prompt
+        formatted_prompt = format_gap_analysis_prompt(
+            current_profile, analysis_results, target_industry, target_role
+        )
+        
+        # Get model ID
+        model_id = PromptFormatter.get_model_id(model_choice)
+        
+        # Call appropriate model
+        if model_choice == "gpt4o":
+            response = self._call_openai_model(formatted_prompt, model_id)
+        elif model_choice == "llama3_custom":
+            response = self._call_together_model(formatted_prompt, model_id)
+        else:
+            raise ValueError(f"Unknown model choice: {model_choice}")
+        
+        return response
+    
+    def generate_perfect_profile_optimization(
+        self,
+        current_profile: Dict[str, Any],
+        perfect_template: Dict[str, Any],
+        gaps: List[Dict[str, Any]],
+        target_industry: str,
+        target_role: str,
+        model_choice: str = "gpt4o"
+    ) -> str:
+        """
+        Generate comprehensive profile optimization using perfect template and gap analysis.
+        
+        Args:
+            current_profile: User's current profile data
+            perfect_template: Perfect profile template from gap analysis
+            gaps: List of identified gaps
+            target_industry: Target industry
+            target_role: Target role
+            model_choice: Model to use for generation
+            
+        Returns:
+            Comprehensive optimization with filled-in examples
+        """
+        from src.prompt_templates import format_perfect_profile_prompt
+        
+        # Format comprehensive prompt
+        formatted_prompt = format_perfect_profile_prompt(
+            current_profile, perfect_template, gaps, target_industry, target_role
+        )
+        
+        # Get model ID
+        model_id = PromptFormatter.get_model_id(model_choice)
+        
+        # Call appropriate model
+        if model_choice == "gpt4o":
+            response = self._call_openai_model(formatted_prompt, model_id)
+        elif model_choice == "llama3_custom":
+            response = self._call_together_model(formatted_prompt, model_id)
+        else:
+            raise ValueError(f"Unknown model choice: {model_choice}")
+        
+        return response
+    
+    def generate_gap_analysis_optimization(
+        self,
+        current_profile: Dict[str, Any],
+        analysis_results: Dict[str, Any],
+        target_industry: str,
+        target_role: str,
+        model_choice: str = "gpt4o"
+    ) -> str:
+        """
+        Generate polished gap analysis optimization with filled-in examples.
+        
+        Args:
+            current_profile: User's current profile data
+            analysis_results: Complete gap analysis results
+            target_industry: Target industry
+            target_role: Target role
+            model_choice: Model to use for generation
+            
+        Returns:
+            Polished optimization with specific examples
+        """
+        from src.prompt_templates import format_gap_analysis_prompt
+        
+        # Format gap analysis prompt
+        formatted_prompt = format_gap_analysis_prompt(
+            current_profile, analysis_results, target_industry, target_role
+        )
+        
+        # Get model ID
+        model_id = PromptFormatter.get_model_id(model_choice)
+        
+        # Call appropriate model
+        if model_choice == "gpt4o":
+            response = self._call_openai_model(formatted_prompt, model_id)
+        elif model_choice == "llama3_custom":
+            response = self._call_together_model(formatted_prompt, model_id)
+        else:
+            raise ValueError(f"Unknown model choice: {model_choice}")
+        
+        return response
     
     def validate_model_availability(self, model_choice: str) -> bool:
         """
