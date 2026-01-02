@@ -10,13 +10,17 @@ import tempfile
 from io import BytesIO
 from typing import Dict, Any, Optional
 
-# Import our modules
-from src.config import Config
-from src.vision_engine import VisionEngine
-from src.strategy_engine import StrategyEngine
-from src.telemetry import telemetry
-from src.training_logger import training_logger
-from src.mlops import mlops_manager
+# Import our modules with error handling
+try:
+    from src.config import Config
+    from src.vision_engine import VisionEngine
+    from src.strategy_engine import StrategyEngine
+    from src.telemetry import telemetry
+    from src.training_logger import training_logger
+    from src.mlops import mlops_manager
+except ImportError as e:
+    st.error(f"❌ Import Error: {e}")
+    st.stop()
 
 # Page configuration
 st.set_page_config(
@@ -25,6 +29,25 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Check OpenAI API key
+import os
+api_key = os.getenv('OPENAI_API_KEY')
+if not api_key:
+    st.error("🚨 OpenAI API Key Missing!")
+    st.markdown("""
+    **To fix this issue:**
+    
+    1. Go to your Streamlit Cloud app settings
+    2. Click on "Secrets" 
+    3. Add this secret:
+    ```
+    OPENAI_API_KEY = sk-your-actual-openai-api-key-here
+    ```
+    4. Replace `sk-your-actual-openai-api-key-here` with your real OpenAI API key
+    5. Save and redeploy the app
+    """)
+    st.stop()
 
 # Custom CSS for better styling
 st.markdown("""
