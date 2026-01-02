@@ -268,11 +268,34 @@ class ContentQualityScorer:
         """Score profile content - wrapper for calculate_overall_score"""
         # Convert LinkedInProfile to dict if needed
         if hasattr(profile_data, 'headline'):
+            # Handle Pydantic models - convert to dict format
+            experience_list = []
+            if hasattr(profile_data, 'experience') and profile_data.experience:
+                for exp in profile_data.experience:
+                    if hasattr(exp, 'dict'):
+                        # Pydantic model
+                        exp_dict = exp.dict()
+                    elif hasattr(exp, '__dict__'):
+                        # Object with __dict__
+                        exp_dict = exp.__dict__
+                    elif isinstance(exp, dict):
+                        # Already a dict
+                        exp_dict = exp
+                    else:
+                        # Unknown format, create basic dict
+                        exp_dict = {
+                            'title': getattr(exp, 'title', 'Unknown'),
+                            'company': getattr(exp, 'company', 'Unknown'),
+                            'dates': getattr(exp, 'dates', ''),
+                            'description': getattr(exp, 'description', '')
+                        }
+                    experience_list.append(exp_dict)
+            
             profile_dict = {
                 'headline': profile_data.headline,
                 'about': profile_data.about,
-                'experience': profile_data.experience,
-                'skills': profile_data.skills
+                'experience': experience_list,
+                'skills': profile_data.skills if hasattr(profile_data, 'skills') else []
             }
         else:
             profile_dict = profile_data
