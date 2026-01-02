@@ -6,7 +6,13 @@ import os
 import time
 import json
 from typing import Dict, Any, Optional, Tuple
-import together
+
+# Optional together library
+try:
+    import together
+    TOGETHER_AVAILABLE = True
+except ImportError:
+    TOGETHER_AVAILABLE = False
 
 from .config import Config
 from .training_logger import training_logger
@@ -17,6 +23,9 @@ class MLOpsManager:
     
     def __init__(self):
         """Initialize MLOps manager"""
+        if not TOGETHER_AVAILABLE:
+            raise ImportError("Together library not available. Install with: pip install together")
+        
         if not Config.is_together_configured():
             raise ValueError("Together AI API key is required for MLOps operations")
         
@@ -330,7 +339,10 @@ class MLOpsManager:
 
 # Global MLOps manager instance
 try:
-    mlops_manager = MLOpsManager()
-except ValueError:
-    # MLOps not available (no Together AI key)
+    if TOGETHER_AVAILABLE and Config.is_together_configured():
+        mlops_manager = MLOpsManager()
+    else:
+        mlops_manager = None
+except (ValueError, ImportError):
+    # MLOps not available (no Together AI key or library)
     mlops_manager = None
