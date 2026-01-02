@@ -272,26 +272,75 @@ class PDFProfileAnalyzer:
         return ''
     
     def _extract_skills(self, text: str, skills_section: str) -> List[str]:
-        """Extract skills from text"""
+        """Extract ALL skills from text - enhanced to capture 100+ skills"""
         skills = []
         
         # Focus on skills section if available
         search_text = skills_section if skills_section else text
         
-        # Common skill patterns
-        skill_patterns = [
-            r'[A-Z][a-z]+\s*(?:[A-Z][a-z]+)?',  # Capitalized skills (Python, Java, etc.)
-            r'\b(?:python|java|javascript|sql|aws|docker|kubernetes|react|angular|node\.js|mongodb|postgresql)\b',
-            r'\b(?:leadership|management|communication|teamwork|strategy|marketing|sales|analytics)\b'
+        # Extract skills from bullet points and lists
+        bullet_patterns = [
+            r'[•·]\s*([A-Za-z][A-Za-z0-9\s\+\#\.\-\/]+)',  # Bullet point skills
+            r'^\s*[-*]\s*([A-Za-z][A-Za-z0-9\s\+\#\.\-\/]+)',  # Dash/asterisk lists
+            r',\s*([A-Za-z][A-Za-z0-9\s\+\#\.\-\/]+)',  # Comma-separated skills
         ]
         
-        for pattern in skill_patterns:
-            matches = re.findall(pattern, search_text, re.IGNORECASE)
-            skills.extend([match.strip() for match in matches if len(match.strip()) > 2])
+        for pattern in bullet_patterns:
+            matches = re.findall(pattern, search_text, re.MULTILINE)
+            for match in matches:
+                skill = match.strip()
+                if 2 < len(skill) < 50:  # Reasonable skill length
+                    skills.append(skill)
+        
+        # Extract common technology skills
+        tech_skills = [
+            'Python', 'Java', 'JavaScript', 'TypeScript', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin',
+            'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Elasticsearch', 'Oracle', 'SQLite',
+            'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Terraform', 'Ansible', 'Jenkins', 'CI/CD',
+            'React', 'Angular', 'Vue', 'Node.js', 'Django', 'Flask', 'Spring', 'Express', 'FastAPI',
+            'Machine Learning', 'Deep Learning', 'AI', 'Data Science', 'TensorFlow', 'PyTorch', 'NLP',
+            'Agile', 'Scrum', 'Kanban', 'DevOps', 'MLOps', 'SRE', 'Linux', 'Unix', 'Windows Server',
+            'Git', 'GitHub', 'GitLab', 'Bitbucket', 'JIRA', 'Confluence', 'Slack', 'Microsoft Office',
+            'Excel', 'PowerPoint', 'Word', 'Tableau', 'Power BI', 'Looker', 'Salesforce', 'HubSpot',
+            'REST', 'GraphQL', 'API', 'Microservices', 'SOA', 'OAuth', 'JWT', 'Security', 'Cybersecurity'
+        ]
+        
+        for skill in tech_skills:
+            if skill.lower() in text.lower():
+                skills.append(skill)
+        
+        # Extract business and soft skills
+        business_skills = [
+            'Leadership', 'Management', 'Strategy', 'Communication', 'Teamwork', 'Problem Solving',
+            'Critical Thinking', 'Negotiation', 'Presentation', 'Public Speaking', 'Project Management',
+            'Product Management', 'Business Development', 'Sales', 'Marketing', 'Analytics', 'Finance',
+            'Budgeting', 'Forecasting', 'Strategic Planning', 'Operations', 'Supply Chain', 'Logistics',
+            'Customer Success', 'Account Management', 'Partnership', 'Stakeholder Management',
+            'Change Management', 'Process Improvement', 'Quality Assurance', 'Risk Management',
+            'Compliance', 'Governance', 'Automation', 'Digital Transformation', 'Innovation'
+        ]
+        
+        for skill in business_skills:
+            if skill.lower() in text.lower():
+                skills.append(skill)
+        
+        # Also look for certifications
+        cert_patterns = [
+            r'(?:certified|certification|certificate)\s+([A-Za-z\s\+\-]+)',
+            r'([A-Za-z\s]+)\s+(?:certified|certification|certificate)',
+            r'(AWS|Azure|GCP|PMP|CISSP|CISM|CISA|CPA|CFA|CCNA|CCNP)\s*(?:certified|certification)?'
+        ]
+        
+        for pattern in cert_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            for match in matches:
+                cert = match.strip()
+                if 2 < len(cert) < 50:
+                    skills.append(f"{cert} (Certified)")
         
         # Remove duplicates and common words
-        common_words = {'and', 'the', 'with', 'for', 'of', 'in', 'to', 'a', 'an', 'or', 'but', 'on', 'at', 'by'}
-        skills = list(set([skill for skill in skills if skill.lower() not in common_words]))
+        common_words = {'and', 'the', 'with', 'for', 'of', 'in', 'to', 'a', 'an', 'or', 'but', 'on', 'at', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can'}
+        skills = list(set([skill for skill in skills if skill.lower() not in common_words and len(skill) > 2]))
         
         return sorted(skills)
     
