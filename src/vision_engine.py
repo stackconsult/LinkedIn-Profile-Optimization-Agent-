@@ -346,13 +346,21 @@ Return ONLY the JSON object - no explanations or extra text.
             
         except Exception as e:
             # Add more context to the error
+            error_str = str(e).lower()
             error_msg = f"Vision extraction failed: {str(e)}"
-            if "JSON" in str(e):
+            
+            if "connection" in error_str or "connect" in error_str:
+                error_msg = "Vision extraction failed: Connection error. Please check your internet connection and OpenAI API key configuration in Streamlit Cloud secrets."
+            elif "JSON" in str(e):
                 error_msg += " - The vision model had trouble parsing the LinkedIn screenshots. Please try with clearer images."
-            elif "rate limit" in str(e).lower():
+            elif "rate limit" in error_str:
                 error_msg += " - Rate limit exceeded. Please wait a moment and try again."
-            elif "timeout" in str(e).lower():
+            elif "timeout" in error_str:
                 error_msg += " - Request timed out. Please try with smaller or fewer images."
+            elif "api key" in error_str or "authentication" in error_str or "unauthorized" in error_str:
+                error_msg = "Vision extraction failed: Invalid or missing OpenAI API key. Please check your Streamlit Cloud secrets configuration."
+            elif "quota" in error_str or "insufficient" in error_str:
+                error_msg = "Vision extraction failed: OpenAI API quota exceeded. Please check your OpenAI account billing."
             
             raise RuntimeError(error_msg)
     
