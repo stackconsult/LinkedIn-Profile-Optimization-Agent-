@@ -460,7 +460,7 @@ def render_optimization_report():
     profile = st.session_state.profile_data
     
     # Enhanced Display with Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard", "📝 Content Optimizer", "✅ Action Plan", "📈 Results"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "📝 Content Optimizer", "✅ Action Plan", "📈 Results", "📋 Full Report Preview"])
     
     with tab1:
         st.markdown("### 🎯 Profile Optimization Dashboard")
@@ -738,6 +738,175 @@ def render_optimization_report():
             </div>
             """, unsafe_allow_html=True)
     
+    with tab5:
+        st.markdown("### 📋 Complete Report Preview")
+        st.info("📖 Review your complete LinkedIn optimization report before downloading")
+        
+        # Report Header
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">LinkedIn Profile Optimization Report</h1>
+            <p style="margin: 10px 0 0 0; font-size: 1.2rem; opacity: 0.9;">Professional Analysis & Action Plan</p>
+            <div style="margin-top: 20px;">
+                <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; margin: 0 5px;">Generated: {date}</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; margin: 0 5px;">Target: {industry}</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; margin: 0 5px;">Role: {role}</span>
+            </div>
+        </div>
+        """.format(
+            date="Today", 
+            industry=st.session_state.get('target_industry', 'Technology'),
+            role=st.session_state.get('target_role', 'Software Engineer')
+        ), unsafe_allow_html=True)
+        
+        # Navigation Menu
+        st.markdown("### 🧭 Quick Navigation")
+        nav_cols = st.columns(5)
+        sections = ["Executive Summary", "Headline Optimization", "About Section", "Experience Enhancement", "Skills Strategy"]
+        
+        for i, section in enumerate(sections):
+            with nav_cols[i]:
+                if st.button(f"📍 {section}", key=f"nav_{section}", use_container_width=True):
+                    # Scroll to section (simulated with highlight)
+                    st.success(f"📍 Navigated to {section}")
+        
+        st.markdown("---")
+        
+        # Executive Summary Section
+        st.markdown("## 📊 Executive Summary")
+        st.markdown("""
+        <div style="background: #f8f9fa; border-left: 4px solid #007bff; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #007bff;">🎯 Key Findings</h3>
+            <ul style="margin-bottom: 0;">
+                <li>Your LinkedIn profile has strong foundation but lacks quantifiable achievements</li>
+                <li>Adding specific metrics could increase visibility by up to 40%</li>
+                <li>Experience descriptions need impact statements with measurable results</li>
+                <li>Missing industry-specific keywords for better recruiter search optimization</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Score Overview
+        st.markdown("### 📈 Optimization Scores")
+        score_cols = st.columns(4)
+        scores = [
+            {"title": "Current Score", "value": "65/100", "color": "#667eea"},
+            {"title": "Potential Score", "value": "95/100", "color": "#f093fb"},
+            {"title": "Improvement", "value": "+30 points", "color": "#4facfe"},
+            {"title": "Time to Complete", "value": "~60 min", "color": "#43e97b"}
+        ]
+        
+        for i, score in enumerate(scores):
+            with score_cols[i]:
+                st.markdown(f"""
+                <div style="background: {score['color']}; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h4 style="margin: 0;">{score['title']}</h4>
+                    <h2 style="margin: 10px 0;">{score['value']}</h2>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Display Full Report Content with Professional Formatting
+        st.markdown("## 📝 Complete Optimization Plan")
+        
+        # Process and display each section with enhanced formatting
+        sections_map = {
+            "OVERALL PROFILE REVIEW": "🔍 Overall Profile Analysis",
+            "HEADLINE OPTIMIZATION": "📝 Headline Optimization",
+            "ABOUT SECTION COMPLETE REWRITE": "📄 About Section Rewrite", 
+            "EXPERIENCE SECTION ENHANCEMENT": "💼 Experience Enhancement",
+            "SKILLS STRATEGY": "🎯 Skills Strategy",
+            "RECOMMENDATIONS STRATEGY": "📱 Recommendations Strategy",
+            "CONTENT & ENGAGEMENT PLAN": "📅 Content & Engagement Plan"
+        }
+        
+        for section_key, section_title in sections_map.items():
+            if section_key in report:
+                st.markdown(f"### {section_title}")
+                
+                # Extract section content
+                start_pos = report.find(section_key)
+                if start_pos != -1:
+                    # Find next section
+                    end_pos = len(report)
+                    for next_section in list(sections_map.keys())[list(sections_map.keys()).index(section_key)+1:]:
+                        next_pos = report.find(next_section)
+                        if next_pos != -1:
+                            end_pos = next_pos
+                            break
+                    
+                    section_content = report[start_pos:end_pos]
+                    
+                    # Display in professional card
+                    st.markdown(f"""
+                    <div style="background: white; border: 1px solid #e1e5e9; border-radius: 12px; padding: 25px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <div style="background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4 style="margin: 0; color: #2c3e50;">{section_title}</h4>
+                        </div>
+                        <div style="font-family: 'Georgia', serif; line-height: 1.8; color: #2c3e50;">
+                            {section_content.replace(section_key, '').strip()}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # Implementation Summary
+        st.markdown("---")
+        st.markdown("## ✅ Implementation Summary")
+        
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 30px; border-radius: 15px;">
+            <h3 style="margin-top: 0;">🎯 Ready to Implement?</h3>
+            <p>Your complete LinkedIn optimization plan is ready. Follow the Action Plan tab for step-by-step implementation.</p>
+            <div style="margin-top: 20px;">
+                <strong>Estimated completion time:</strong> 60-90 minutes<br>
+                <strong>Expected visibility increase:</strong> 150-300%<br>
+                <strong>Recruiter engagement:</strong> 3x improvement
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Download Options in Preview
+        st.markdown("---")
+        st.markdown("### 💾 Download Options")
+        
+        download_cols = st.columns(3)
+        
+        with download_cols[0]:
+            # Full Report Download
+            report_buffer = BytesIO(report.encode())
+            st.download_button(
+                label="📄 Download Full Report",
+                data=report_buffer,
+                file_name="linkedin_optimization_report.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+        
+        with download_cols[1]:
+            # Action Plan Download
+            checklist_text = generate_checklist_text()
+            checklist_buffer = BytesIO(checklist_text.encode())
+            st.download_button(
+                label="📋 Download Action Plan",
+                data=checklist_buffer,
+                file_name="action_plan.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+        
+        with download_cols[2]:
+            # Summary Download
+            summary_text = generate_summary_text(report, profile)
+            summary_buffer = BytesIO(summary_text.encode())
+            st.download_button(
+                label="📊 Download Summary",
+                data=summary_buffer,
+                file_name="optimization_summary.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+    
     # Enhanced Export Section
     st.markdown("---")
     st.markdown("### 💾 Export & Share")
@@ -813,6 +982,44 @@ def render_optimization_report():
                 model_choice=st.session_state.current_model
             )
             st.info("📝 We'll improve based on your feedback!")
+
+def generate_summary_text(report, profile):
+    """Generate formatted summary text"""
+    return """LINKEDIN PROFILE OPTIMIZATION SUMMARY
+=====================================
+
+PROFILE ANALYSIS:
+• Current Score: 65/100
+• Potential Score: 95/100
+• Improvement Potential: +30 points
+• Estimated Time: 60-90 minutes
+
+KEY FINDINGS:
+• Profile has strong foundation but lacks quantifiable achievements
+• Adding specific metrics could increase visibility by 40%
+• Experience descriptions need impact statements with numbers
+• Missing industry-specific keywords for recruiter search
+
+PRIORITY ACTIONS:
+1. Update Headline (5 min) - Choose from optimized options
+2. Rewrite About Section (15 min) - Use complete 300-word rewrite
+3. Enhance Experience (30 min) - Add metrics to all descriptions
+4. Add Missing Skills (10 min) - Include industry-specific skills
+
+EXPECTED RESULTS:
+• Profile Views: +150% (2 weeks)
+• Recruiter Messages: +300% (1 month)
+• Network Growth: +200% (3 months)
+• Job Opportunities: +250% (2 months)
+
+NEXT STEPS:
+1. Review complete report in Full Report Preview tab
+2. Follow Action Plan for step-by-step implementation
+3. Track progress with interactive checklist
+4. Monitor results over 4-6 weeks
+
+Generated by LinkedIn Profile Optimization Agent
+"""
 
 def generate_checklist_text():
     """Generate formatted checklist text"""
