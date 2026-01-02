@@ -42,6 +42,9 @@ class StrategyEngine:
         if not self.openai_client:
             raise ValueError("OpenAI client not initialized")
         
+        if not isinstance(messages, list):
+            raise ValueError("messages must be a list of chat messages")
+        
         response = self.openai_client.chat.completions.create(
             model=model_id,
             messages=messages,
@@ -187,11 +190,35 @@ class StrategyEngine:
         Returns:
             Comprehensive optimization with filled-in examples
         """
-        from src.prompt_templates import format_perfect_profile_prompt
+        from src.prompt_templates import format_perfect_profile_prompt, get_system_prompt
         
-        # Format comprehensive prompt
-        formatted_prompt = format_perfect_profile_prompt(
-            current_profile, perfect_template, gaps, target_industry, target_role
+        # Normalize experience objects into dictionaries to avoid attribute errors
+        experiences = current_profile.get("experience", [])
+        normalized_experiences = []
+        for exp in experiences:
+            if hasattr(exp, "title"):
+                normalized_experiences.append(
+                    {
+                        "title": getattr(exp, "title", ""),
+                        "company": getattr(exp, "company", ""),
+                        "dates": getattr(exp, "dates", ""),
+                        "description": getattr(exp, "description", ""),
+                    }
+                )
+            else:
+                normalized_experiences.append(exp)
+        normalized_profile = {
+            **current_profile,
+            "experience": normalized_experiences,
+        }
+        
+        # Build prompts
+        system_prompt = get_system_prompt(target_industry, target_role)
+        user_content = format_perfect_profile_prompt(
+            normalized_profile, perfect_template, gaps, target_industry, target_role
+        )
+        formatted_prompt = PromptFormatter.format_for_model(
+            model_choice, system_prompt, user_content
         )
         
         # Get model ID
@@ -228,11 +255,35 @@ class StrategyEngine:
         Returns:
             Polished optimization with specific examples
         """
-        from src.prompt_templates import format_gap_analysis_prompt
+        from src.prompt_templates import format_gap_analysis_prompt, get_system_prompt
         
-        # Format gap analysis prompt
-        formatted_prompt = format_gap_analysis_prompt(
-            current_profile, analysis_results, target_industry, target_role
+        # Normalize experience objects into dictionaries
+        experiences = current_profile.get("experience", [])
+        normalized_experiences = []
+        for exp in experiences:
+            if hasattr(exp, "title"):
+                normalized_experiences.append(
+                    {
+                        "title": getattr(exp, "title", ""),
+                        "company": getattr(exp, "company", ""),
+                        "dates": getattr(exp, "dates", ""),
+                        "description": getattr(exp, "description", ""),
+                    }
+                )
+            else:
+                normalized_experiences.append(exp)
+        normalized_profile = {
+            **current_profile,
+            "experience": normalized_experiences,
+        }
+        
+        # Build prompts
+        system_prompt = get_system_prompt(target_industry, target_role)
+        user_content = format_gap_analysis_prompt(
+            normalized_profile, analysis_results, target_industry, target_role
+        )
+        formatted_prompt = PromptFormatter.format_for_model(
+            model_choice, system_prompt, user_content
         )
         
         # Get model ID

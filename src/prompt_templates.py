@@ -326,7 +326,20 @@ def format_perfect_profile_prompt(
     # Format current profile
     current_headline = current_profile.get('headline', 'No headline')
     current_about = current_profile.get('about', 'No about section')
-    current_experience = current_profile.get('experience', [])
+    experiences_raw = current_profile.get('experience', [])
+    
+    # Normalize experience objects into dicts for display
+    current_experience = []
+    for exp in experiences_raw:
+        if hasattr(exp, 'title'):
+            current_experience.append({
+                'title': getattr(exp, 'title', ''),
+                'company': getattr(exp, 'company', ''),
+                'description': getattr(exp, 'description', ''),
+                'dates': getattr(exp, 'dates', '')
+            })
+        else:
+            current_experience.append(exp)
     current_skills = current_profile.get('skills', [])
     
     # Format experience for display
