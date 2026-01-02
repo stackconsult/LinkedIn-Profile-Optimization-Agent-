@@ -307,6 +307,139 @@ def render_upload_section():
             for i, file in enumerate(uploaded_files[:4]):
                 with cols[i]:
                     st.image(file, caption=f"Image {i+1}", use_column_width=True)
+            
+            # AUTOMATIC IMAGE ANALYSIS
+            st.markdown("---")
+            st.markdown("#### 🔍 Automatic Analysis")
+            
+            with st.spinner("🔍 Analyzing your LinkedIn profile..."):
+                try:
+                    # Convert uploaded files to base64
+                    base64_images = []
+                    for file in uploaded_files:
+                        image_bytes = file.read()
+                        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                        base64_images.append(base64_image)
+                    
+                    # Extract profile data
+                    vision_engine = VisionEngine()
+                    profile_data = vision_engine.extract_profile_data(base64_images)
+                    
+                    # Store in session state
+                    st.session_state.profile_data = profile_data
+                    st.session_state.upload_method = "images"
+                    
+                    st.success("✅ Profile analysis complete!")
+                    
+                    # Display extraction summary
+                    st.markdown("#### 📊 Extraction Summary")
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.metric("Headline", "✅" if profile_data.headline else "❌")
+                    with col2:
+                        st.metric("About", "✅" if profile_data.about else "❌")
+                    with col3:
+                        st.metric("Experience", f"{len(profile_data.experience)}")
+                    with col4:
+                        st.metric("Skills", f"{len(profile_data.skills)}")
+                    
+                    # Generate optimization report automatically
+                    with st.spinner("🎯 Generating optimization strategy..."):
+                        try:
+                            strategy_engine = get_strategy_engine()
+                            if strategy_engine:
+                                target_industry = st.session_state.get('target_industry', 'Technology')
+                                target_role = st.session_state.get('target_role', 'Software Engineer')
+                                
+                                # Generate optimization report
+                                optimization_report = strategy_engine.generate_optimization_strategy(
+                                    profile_data, target_industry, target_role
+                                )
+                                
+                                # Store in session state
+                                st.session_state.optimization_report = optimization_report
+                                st.success("🎉 Optimization strategy generated automatically!")
+                                st.balloons()
+                                st.rerun()  # Refresh to show results
+                            else:
+                                st.error("❌ Strategy engine not available")
+                        except Exception as e:
+                            st.error(f"❌ Strategy generation failed: {str(e)}")
+                            st.info("💡 You can try re-uploading or contact support")
+                    
+                except Exception as e:
+                    st.error(f"❌ Analysis failed: {str(e)}")
+                    st.info("💡 Please ensure your screenshots are clear and contain your LinkedIn profile information")
+            
+            # Manual analysis as fallback
+            st.markdown("---")
+            st.markdown("#### 🔧 Manual Analysis (Fallback)")
+            
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                manual_analyze_button = st.button(
+                    "🔍 Analyze LinkedIn Screenshots Manually",
+                    use_container_width=True,
+                    help="Manually trigger analysis if automatic analysis failed"
+                )
+            
+            with col2:
+                if st.session_state.get('profile_data'):
+                    if st.button("🗑️ Clear Data", use_container_width=True):
+                        st.session_state.profile_data = None
+                        st.session_state.optimization_report = None
+                        st.session_state.pdf_profile_data = None
+                        st.session_state.upload_method = None
+                        st.rerun()
+            
+            if manual_analyze_button:
+                with st.spinner("🔍 Manually analyzing your LinkedIn profile..."):
+                    try:
+                        # Convert uploaded files to base64
+                        base64_images = []
+                        for file in uploaded_files:
+                            file.seek(0)  # Reset file pointer
+                            image_bytes = file.read()
+                            base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                            base64_images.append(base64_image)
+                        
+                        # Extract profile data
+                        vision_engine = VisionEngine()
+                        profile_data = vision_engine.extract_profile_data(base64_images)
+                        
+                        # Store in session state
+                        st.session_state.profile_data = profile_data
+                        st.session_state.upload_method = "images"
+                        
+                        st.success("✅ Manual profile analysis complete!")
+                        
+                        # Generate optimization report
+                        with st.spinner("🎯 Generating optimization strategy..."):
+                            try:
+                                strategy_engine = get_strategy_engine()
+                                if strategy_engine:
+                                    target_industry = st.session_state.get('target_industry', 'Technology')
+                                    target_role = st.session_state.get('target_role', 'Software Engineer')
+                                    
+                                    # Generate optimization report
+                                    optimization_report = strategy_engine.generate_optimization_strategy(
+                                        profile_data, target_industry, target_role
+                                    )
+                                    
+                                    # Store in session state
+                                    st.session_state.optimization_report = optimization_report
+                                    st.success("🎉 Manual optimization strategy generated!")
+                                    st.balloons()
+                                    st.rerun()  # Refresh to show results
+                                else:
+                                    st.error("❌ Strategy engine not available")
+                            except Exception as e:
+                                st.error(f"❌ Manual strategy generation failed: {str(e)}")
+                        
+                    except Exception as e:
+                        st.error(f"❌ Manual analysis failed: {str(e)}")
+                        st.info("💡 Please ensure your screenshots are clear and contain your LinkedIn profile information")
     
     with col2:
         st.markdown("### 📄 PDF Profile Upload")
@@ -372,9 +505,9 @@ def render_upload_section():
                                 skills_text += f" and {len(profile_data.skills) - 15} more..."
                             st.caption(skills_text)
                         
-                        # Generate analysis button
-                        if st.button("🚀 Generate Ultimate Profile", key="generate_from_pdf", use_container_width=True):
-                            with st.spinner("🎯 Generating ultimate profile template..."):
+                        # AUTOMATICALLY GENERATE OPTIMIZATION REPORT
+                        with st.spinner("🎯 Generating optimization strategy..."):
+                            try:
                                 target_industry = st.session_state.get('target_industry', 'Technology')
                                 target_role = st.session_state.get('target_role', 'Software Engineer')
                                 
@@ -410,9 +543,62 @@ def render_upload_section():
                                     skills=profile_data.skills
                                 )
                                 
-                                st.success("🎉 Ultimate profile generated successfully!")
+                                st.success("🎉 Optimization strategy generated automatically!")
                                 st.balloons()
                                 st.rerun()  # Refresh to show results
+                            
+                            except Exception as e:
+                                st.error(f"❌ Automatic strategy generation failed: {e}")
+                                st.info("💡 You can still generate it manually using the button below")
+                        
+                        # Manual generation button as fallback
+                        st.markdown("---")
+                        st.markdown("#### 🔧 Manual Generation (Fallback)")
+                        if st.button("🚀 Generate Ultimate Profile Manually", key="generate_from_pdf_manual", use_container_width=True):
+                            with st.spinner("🎯 Generating ultimate profile template..."):
+                                try:
+                                    target_industry = st.session_state.get('target_industry', 'Technology')
+                                    target_role = st.session_state.get('target_role', 'Software Engineer')
+                                    
+                                    # Generate comprehensive report
+                                    analysis_report = analyzer.generate_profile_analysis_report(
+                                        profile_data, target_industry, target_role
+                                    )
+                                    
+                                    # Generate ultimate template
+                                    ultimate_template = analyzer.create_ultimate_profile_template(
+                                        profile_data, target_industry, target_role
+                                    )
+                                    
+                                    # Store in session state
+                                    st.session_state.pdf_analysis_report = analysis_report
+                                    st.session_state.ultimate_profile_template = ultimate_template
+                                    st.session_state.optimization_report = ultimate_template
+                                    
+                                    # Create profile data for compatibility
+                                    from src.vision_engine import LinkedInProfile
+                                    st.session_state.profile_data = LinkedInProfile(
+                                        headline=f"{target_role} | {target_industry} | Professional",
+                                        about="Generated from PDF analysis",
+                                        experience=[
+                                            {
+                                                "title": exp.get('title', ''),
+                                                "company": exp.get('company', ''),
+                                                "dates": exp.get('dates', ''),
+                                                "description": exp.get('description', '')
+                                            }
+                                            for exp in profile_data.experiences
+                                        ],
+                                        skills=profile_data.skills
+                                    )
+                                    
+                                    st.success("🎉 Ultimate profile generated successfully!")
+                                    st.balloons()
+                                    st.rerun()  # Refresh to show results
+                                
+                                except Exception as e:
+                                    st.error(f"❌ Manual generation failed: {e}")
+                                    st.info("💡 Please try again or contact support")
                     
                     except ImportError as e:
                         st.error(f"❌ PDF analysis libraries not available: {e}")
@@ -423,87 +609,6 @@ def render_upload_section():
                         st.error(f"❌ PDF analysis failed: {e}")
                         st.info("📧 Please ensure your PDF is a valid resume/profile document")
                         st.info("💡 Try using image screenshots if PDF analysis continues to fail")
-    
-    # Analysis button for images
-    if uploaded_files:
-        st.markdown("---")
-        
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            analyze_button = st.button(
-                "🔍 Analyze LinkedIn Screenshots",
-                type="primary",
-                use_container_width=True,
-                help="Analyze your LinkedIn profile screenshots to generate optimization recommendations"
-            )
-        
-        with col2:
-            if st.session_state.get('profile_data'):
-                if st.button("🗑️ Clear", use_container_width=True):
-                    st.session_state.profile_data = None
-                    st.session_state.optimization_report = None
-                    st.session_state.pdf_profile_data = None
-                    st.session_state.upload_method = None
-                    st.rerun()
-        
-        if analyze_button:
-            with st.spinner("🔍 Analyzing your LinkedIn profile..."):
-                try:
-                    # Convert uploaded files to base64
-                    base64_images = []
-                    for file in uploaded_files:
-                        image_bytes = file.read()
-                        base64_image = base64.b64encode(image_bytes).decode('utf-8')
-                        base64_images.append(base64_image)
-                    
-                    # Extract profile data
-                    vision_engine = VisionEngine()
-                    profile_data = vision_engine.extract_profile_data(base64_images)
-                    
-                    # Store in session state
-                    st.session_state.profile_data = profile_data
-                    st.session_state.upload_method = "images"
-                    
-                    st.success("✅ Profile analysis complete!")
-                    
-                    # Display extraction summary
-                    st.markdown("#### 📊 Extraction Summary")
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.metric("Headline", "✅" if profile_data.headline else "❌")
-                    with col2:
-                        st.metric("About", "✅" if profile_data.about else "❌")
-                    with col3:
-                        st.metric("Experience", f"{len(profile_data.experience)}")
-                    with col4:
-                        st.metric("Skills", f"{len(profile_data.skills)}")
-                    
-                    # Generate optimization report automatically
-                    with st.spinner("🎯 Generating optimization strategy..."):
-                        try:
-                            strategy_engine = get_strategy_engine()
-                            if strategy_engine:
-                                target_industry = st.session_state.get('target_industry', 'Technology')
-                                target_role = st.session_state.get('target_role', 'Software Engineer')
-                                
-                                # Generate optimization report
-                                optimization_report = strategy_engine.generate_optimization_strategy(
-                                    profile_data, target_industry, target_role
-                                )
-                                
-                                # Store in session state
-                                st.session_state.optimization_report = optimization_report
-                                st.success("🎉 Optimization strategy generated!")
-                                st.rerun()  # Refresh to show results
-                            else:
-                                st.error("❌ Strategy engine not available")
-                        except Exception as e:
-                            st.error(f"❌ Strategy generation failed: {str(e)}")
-                    
-                except Exception as e:
-                    st.error(f"❌ Analysis failed: {str(e)}")
-                    st.info("💡 Please ensure your screenshots are clear and contain your LinkedIn profile information")
     
     # Show current upload method
     if st.session_state.get('upload_method'):
