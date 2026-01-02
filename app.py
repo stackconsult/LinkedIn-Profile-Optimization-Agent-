@@ -1025,6 +1025,128 @@ def render_unified_results():
             st.error(f"❌ One-click implementation failed: {str(e)}")
             st.info("💡 This is a Phase 2 feature - basic optimization still works")
         
+        # ========== PERFECT PROFILE TEMPLATE & GAP ANALYSIS ==========
+        st.markdown("---")
+        st.markdown("#### 🏆 Perfect Profile Template & Gap Analysis")
+        st.info("Get a tailored perfect profile template for your industry/role and see exactly what's missing from your current profile.")
+        
+        try:
+            from src.profile_gap_analyzer import ProfileGapAnalyzer, generate_perfect_profile_report
+            gap_analyzer = ProfileGapAnalyzer()
+            
+            if profile:
+                # Convert profile to dict for analysis
+                if hasattr(profile, '__dict__'):
+                    profile_dict = {
+                        'headline': profile.headline,
+                        'about': profile.about,
+                        'experience': profile.experience,
+                        'skills': profile.skills
+                    }
+                else:
+                    profile_dict = profile
+                
+                # Analyze gaps
+                analysis = gap_analyzer.analyze_gaps(profile_dict, target_industry, target_role)
+                
+                # Display completeness score
+                score = analysis['completeness_score']
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Profile Completeness", f"{score}/100", 
+                             delta=f"{95-score} to perfect" if score < 95 else "Perfect!")
+                with col2:
+                    st.metric("Quick Wins Available", len(analysis['quick_wins']))
+                with col3:
+                    st.metric("High Impact Gaps", len(analysis['high_impact']))
+                
+                # Perfect Profile Template
+                st.markdown("##### 🎯 Your Perfect Profile Template")
+                template = analysis['perfect_template']
+                
+                with st.expander("📝 Ideal Headline", expanded=False):
+                    st.markdown(f"**Template:** `{template['headline']['ideal_template']}`")
+                    st.markdown(f"**Example:** {template['headline']['example']}")
+                    st.markdown("**Must Include:**")
+                    for item in template['headline']['must_haves']:
+                        st.markdown(f"  ✓ {item}")
+                
+                with st.expander("📄 Ideal About Section", expanded=False):
+                    st.markdown(f"**Ideal Length:** {template['about']['ideal_length']}")
+                    st.markdown("**Structure:**")
+                    for i, item in enumerate(template['about']['structure'], 1):
+                        st.markdown(f"  {i}. {item}")
+                    st.markdown("**Example Hooks:**")
+                    for hook in template['about'].get('example_hooks', []):
+                        st.markdown(f"  • _{hook}_")
+                
+                with st.expander("💼 Ideal Experience Format", expanded=False):
+                    st.markdown("**Must Include:**")
+                    for item in template['experience']['must_haves']:
+                        st.markdown(f"  ✓ {item}")
+                    st.markdown("**Power Action Verbs:**")
+                    st.markdown(f"  {', '.join(template['experience']['action_verbs'][:10])}")
+                
+                with st.expander("🎯 Must-Have Skills", expanded=False):
+                    if template['skills']['must_have']:
+                        cols = st.columns(3)
+                        for i, skill in enumerate(template['skills']['must_have']):
+                            with cols[i % 3]:
+                                st.markdown(f"  • {skill}")
+                
+                with st.expander("📜 Recommended Certifications", expanded=False):
+                    if template['certifications']['recommended']:
+                        for cert in template['certifications']['recommended']:
+                            st.markdown(f"  🏅 {cert}")
+                
+                # Gap Analysis - What's Missing
+                st.markdown("##### ❌ What's Missing From Your Profile")
+                
+                missing = analysis['missing_to_perfect']
+                for category, items in missing.items():
+                    if items:
+                        with st.expander(f"🔴 {category.upper()} Gaps ({len(items)} items)", expanded=True):
+                            for item in items:
+                                st.markdown(f"  ❌ {item}")
+                
+                # Quick Wins
+                if analysis['quick_wins']:
+                    st.markdown("##### ⚡ Quick Wins (Do These First!)")
+                    for i, gap in enumerate(analysis['quick_wins'], 1):
+                        st.success(f"**{i}.** {gap['action_required']}")
+                
+                # Improvement Roadmap
+                st.markdown("##### 🗺️ Your Improvement Roadmap")
+                for phase in analysis['roadmap']:
+                    with st.expander(f"📍 {phase['phase']} ({phase['timeframe']})", expanded=False):
+                        st.markdown(f"**Expected Impact:** {phase['expected_impact']}")
+                        for action in phase['actions']:
+                            st.markdown(f"  • {action}")
+                
+                # Generate Full Report Button
+                if st.button("📊 Generate Full Perfect Profile Report", use_container_width=True):
+                    full_report = generate_perfect_profile_report(profile_dict, target_industry, target_role)
+                    st.markdown("---")
+                    st.markdown(full_report)
+                    
+                    # Download option
+                    st.download_button(
+                        label="📥 Download Perfect Profile Report",
+                        data=full_report,
+                        file_name=f"perfect_profile_report_{target_role.replace(' ', '_')}.md",
+                        mime="text/markdown"
+                    )
+            else:
+                st.warning("📤 Please upload your profile first to see gap analysis")
+        
+        except ImportError as e:
+            st.info(f"🏆 Perfect Profile Template feature loading... ({e})")
+        except Exception as e:
+            st.error(f"❌ Gap analysis failed: {str(e)}")
+            st.info("💡 Please ensure your profile is properly uploaded")
+        
+        st.markdown("---")
+        
         # Feedback Section
         st.markdown("#### 📝 Feedback & Rating")
         
