@@ -964,13 +964,14 @@ def render_unified_results():
                 quality_scores = scorer.score_profile_content(profile, target_industry, target_role)
                 
                 # Generate dynamic checklist with correct method name and parameters
-                dynamic_checklist = checklist_gen.generate_dynamic_checklist(
-                    profile_data=profile.__dict__ if hasattr(profile, '__dict__') else profile,
-                    quality_scores=quality_scores,
-                    optimization_report=st.session_state.get('optimization_report', ''),
-                    target_industry=target_industry,
-                    target_role=target_role
-                )
+                with st.spinner("✨ Generating personalized action plan..."):
+                    dynamic_checklist = checklist_gen.generate_dynamic_checklist(
+                        profile_data=profile.__dict__ if hasattr(profile, '__dict__') else profile,
+                        quality_scores=quality_scores,
+                        optimization_report=st.session_state.get('optimization_report', ''),
+                        target_industry=target_industry,
+                        target_role=target_role
+                    )
                 
                 # Display dynamic checklist
                 for i, item in enumerate(dynamic_checklist, 1):
@@ -979,8 +980,17 @@ def render_unified_results():
                         st.checkbox("", key=f"dynamic_{i}")
                     with col2:
                         # Handle ChecklistTask objects
-                        task_text = item.description if hasattr(item, 'description') else str(item)
-                        st.markdown(f"**{i}.** {task_text}")
+                        if hasattr(item, 'description'):
+                            task_text = item.description
+                            task_title = item.title if hasattr(item, 'title') else f"Task {i}"
+                            priority = item.priority.value if hasattr(item, 'priority') and hasattr(item.priority, 'value') else 'medium'
+                            time_est = item.estimated_time if hasattr(item, 'estimated_time') else '10 min'
+                            st.markdown(f"**{i}.** {task_title}")
+                            st.markdown(f"   {task_text}")
+                            st.markdown(f"   ⏱️ {time_est} | 🎯 {priority}")
+                        else:
+                            task_text = str(item)
+                            st.markdown(f"**{i}.** {task_text}")
         
         except ImportError:
             st.info("✨ Dynamic checklist available with complete installation")

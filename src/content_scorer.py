@@ -167,14 +167,14 @@ class ContentQualityScorer:
                 # Pydantic object
                 description = exp.description
                 title = exp.title
-            elif hasattr(exp, 'get'):
-                # Dictionary object
-                description = exp.get('description', '')
-                title = exp.get('title', 'Unknown')
+                company = exp.company if hasattr(exp, 'company') else ''
+                dates = exp.dates if hasattr(exp, 'dates') else ''
             else:
-                # Unknown format, try to access attributes directly
-                description = getattr(exp, 'description', '')
-                title = getattr(exp, 'title', 'Unknown')
+                # Dict object
+                description = exp.get('description', '')
+                title = exp.get('title', '')
+                company = exp.get('company', '')
+                dates = exp.get('dates', '')
             
             # Action verbs
             action_count = sum(1 for verb in self.action_verbs if verb in description.lower())

@@ -190,7 +190,14 @@ class DynamicChecklistGenerator:
         checklist_tasks.extend(about_tasks)
         
         # Analyze experience
-        experience_tasks = self._analyze_experience_section(profile_data.get('experience', []), quality_scores.get('experience'))
+        experience_data = profile_data.get('experience', [])
+        # Handle both list of ExperienceItem objects and list of dicts
+        if experience_data and hasattr(experience_data[0], 'description'):
+            # ExperienceItem objects - convert to list format expected by analysis
+            experience_tasks = self._analyze_experience_section(experience_data, quality_scores.get('experience'))
+        else:
+            # Dict objects or empty list
+            experience_tasks = self._analyze_experience_section(experience_data, quality_scores.get('experience'))
         checklist_tasks.extend(experience_tasks)
         
         # Analyze skills
@@ -277,7 +284,7 @@ class DynamicChecklistGenerator:
         
         return tasks
     
-    def _analyze_experience_section(self, experiences: List[Dict], experience_score) -> List[ChecklistTask]:
+    def _analyze_experience_section(self, experiences: List, experience_score) -> List[ChecklistTask]:
         """Analyze experience section and generate tasks"""
         tasks = []
         
@@ -294,10 +301,17 @@ class DynamicChecklistGenerator:
         
         # Check for missing metrics in experience descriptions
         for i, exp in enumerate(experiences):
-            description = exp.get('description', '')
+            # Handle both dict and ExperienceItem objects
+            if hasattr(exp, 'description'):
+                description = exp.description
+                title = exp.title
+            else:
+                description = exp.get('description', '')
+                title = exp.get('title', 'Experience')
+            
             if not any(indicator in description.lower() for indicator in ['%', '$', 'number', 'increased', 'decreased']):
                 tasks.append(ChecklistTask(
-                    id="", title=f"📈 Add Metrics to {exp.get('title', 'Experience')}",
+                    id="", title=f"📈 Add Metrics to {title}",
                     description="Add specific numbers and results to this experience",
                     priority=TaskPriority.HIGH,
                     estimated_time="10 min",
