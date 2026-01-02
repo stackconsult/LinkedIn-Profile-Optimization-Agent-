@@ -54,6 +54,10 @@ class PDFProfileAnalyzer:
     
     def __init__(self):
         self.section_patterns = {
+            'headline': [
+                r'headline|title|tagline|professional headline',
+                r'current position|current role|job title'
+            ],
             'experience': [
                 r'experience|work experience|professional experience|employment|work history',
                 r'career|professional background|job history'
@@ -218,6 +222,29 @@ class PDFProfileAnalyzer:
             
             if section_content:
                 sections[section_name] = section_content
+        
+        # Special handling for LinkedIn PDF format - extract name and headline from first lines
+        # LinkedIn PDFs typically have: Name on line 1, Headline on line 2-3
+        lines = text.split('\n')
+        clean_lines = [line.strip() for line in lines if line.strip()]
+        
+        if clean_lines and 'name' not in sections:
+            # First non-empty line is usually the name
+            potential_name = clean_lines[0]
+            if len(potential_name) > 2 and len(potential_name) < 100:
+                sections['name'] = potential_name
+        
+        if len(clean_lines) > 1 and 'headline' not in sections:
+            # Second line is often the headline in LinkedIn PDFs
+            potential_headline = clean_lines[1]
+            # Check if it looks like a headline (contains | or common job indicators)
+            if '|' in potential_headline or any(word in potential_headline.lower() for word in ['manager', 'director', 'engineer', 'developer', 'lead', 'chief', 'founder', 'ceo', 'cto', 'cso', 'president', 'analyst', 'consultant', 'specialist', 'coordinator', 'strategist', 'innovator']):
+                sections['headline'] = potential_headline
+            elif len(clean_lines) > 2:
+                # Try third line if second doesn't look like headline
+                potential_headline = clean_lines[2]
+                if '|' in potential_headline or len(potential_headline) > 20:
+                    sections['headline'] = potential_headline
         
         return sections
     
