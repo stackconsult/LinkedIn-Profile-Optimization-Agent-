@@ -146,8 +146,8 @@ class ContentQualityScorer:
         
         return QualityMetrics(score, max_score, feedback, suggestions)
     
-    def _score_experience_section(self, experiences: List[Dict]) -> QualityMetrics:
-        """Score experience section quality"""
+    def _score_experience_section(self, experiences: List) -> QualityMetrics:
+        """Score experience section quality - handles both dict and Pydantic objects"""
         score = 0
         max_score = 100
         feedback = []
@@ -161,14 +161,27 @@ class ContentQualityScorer:
         
         for exp in experiences:
             exp_score = 0
-            description = exp.get('description', '')
+            
+            # Handle both dict and Pydantic ExperienceItem objects
+            if hasattr(exp, 'description'):
+                # Pydantic object
+                description = exp.description
+                title = exp.title
+            elif hasattr(exp, 'get'):
+                # Dictionary object
+                description = exp.get('description', '')
+                title = exp.get('title', 'Unknown')
+            else:
+                # Unknown format, try to access attributes directly
+                description = getattr(exp, 'description', '')
+                title = getattr(exp, 'title', 'Unknown')
             
             # Action verbs
             action_count = sum(1 for verb in self.action_verbs if verb in description.lower())
             if action_count >= 2:
                 exp_score += 8
             else:
-                feedback.append(f"Experience '{exp.get('title', 'Unknown')}' lacks action verbs")
+                feedback.append(f"Experience '{title}' lacks action verbs")
                 suggestions.append("Start bullet points with action verbs")
             
             # Quantifiable results
@@ -176,7 +189,7 @@ class ContentQualityScorer:
             if quant_count >= 1:
                 exp_score += 9
             else:
-                feedback.append(f"Experience '{exp.get('title', 'Unknown')}' lacks metrics")
+                feedback.append(f"Experience '{title}' lacks metrics")
                 suggestions.append("Add specific numbers and results")
             
             # Impact statements
@@ -184,7 +197,7 @@ class ContentQualityScorer:
             if any(indicator in description.lower() for indicator in impact_indicators):
                 exp_score += 8
             else:
-                feedback.append(f"Experience '{exp.get('title', 'Unknown')}' lacks impact statements")
+                feedback.append(f"Experience '{title}' lacks impact statements")
                 suggestions.append("Show the impact of your work")
             
             actual_score += exp_score

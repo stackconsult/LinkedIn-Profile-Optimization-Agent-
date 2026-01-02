@@ -41,41 +41,72 @@ class VisionEngine:
         self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
     
     def _create_vision_prompt(self) -> str:
-        """Create the prompt for vision model"""
-        return """You are a LinkedIn profile data extraction specialist. Your ONLY job is to extract ALL text visible in these screenshots with 100% accuracy.
+        """Create the vision prompt for LinkedIn profile extraction"""
+        return """
+You are an expert LinkedIn profile data extractor. Your task is to extract ALL visible text from LinkedIn profile screenshots with extreme precision and completeness.
 
-CRITICAL EXTRACTION RULES:
-1. Extract EVERY word of text visible in ALL screenshots
-2. Do NOT skip any bullet points, descriptions, or details
-3. Include ALL job responsibilities, achievements, and skills
-4. Preserve exact wording while organizing properly
-5. If you see experience entries, extract ALL of them with complete descriptions
-6. If you see skills, extract EVERY single skill listed
-7. Do NOT invent information - only extract what's visible
-8. Do NOT summarize - provide complete text
+ CRITICAL EXTRACTION REQUIREMENTS:
 
-Return ONLY this JSON structure with ALL visible text:
+1. EXPERIENCE ENTRIES - MOST IMPORTANT:
+   - Extract EVERY single experience entry visible
+   - For each experience, get the COMPLETE job description
+   - Include ALL bullet points, responsibilities, and achievements
+   - Do NOT truncate descriptions - get the FULL text
+   - If bullet points are visible, extract ALL of them
+   - Include company name, job title, dates, and COMPLETE description
+   - Look for multi-line descriptions and extract everything
 
+2. HEADLINE:
+   - Extract the exact headline text
+   - Include all characters and special characters
+
+3. ABOUT SECTION:
+   - Extract the COMPLETE About section
+   - Include ALL paragraphs and sentences
+   - Do not summarize or truncate
+
+4. SKILLS:
+   - Extract EVERY single skill visible
+   - Include technical skills, soft skills, certifications
+   - Get all skills listed, not just a sample
+
+ EXTRACTION STRATEGY:
+- Read the screenshots carefully and methodically
+- Extract text EXACTLY as it appears
+- Do not invent or assume information
+- Do not summarize - provide complete text
+- If text is visible, extract it completely
+- Pay special attention to experience descriptions - these are most important
+
+ JSON STRUCTURE TO RETURN:
 {
-    "headline": "exact headline text",
-    "about": "complete About section text with all paragraphs",
+    "headline": "exact complete headline text",
+    "about": "complete About section with all paragraphs and sentences",
     "experience": [
         {
-            "title": "exact job title",
-            "company": "exact company name",
-            "dates": "exact employment dates", 
-            "description": "COMPLETE job description with ALL responsibilities, achievements, bullet points, and details visible in screenshots"
+            "title": "exact job title as shown",
+            "company": "exact company name as shown",
+            "dates": "exact employment dates as shown",
+            "description": "COMPLETE job description with ALL responsibilities, ALL bullet points, ALL achievements, and ALL details visible. Include every word you can see in the experience section."
         }
     ],
-    "skills": ["skill1", "skill2", "skill3", "skill4", "skill5"]
+    "skills": ["skill1", "skill2", "skill3", "skill4", "skill5", "skill6", "skill7", "skill8", "skill9", "skill10"]
 }
 
-IMPORTANT:
-- Extract ALL experience entries visible (not just one)
-- Extract ALL skills visible (not just a few)
-- Include complete job descriptions with all bullet points
-- Do not say "not found" if text is clearly visible in screenshots
-- Be thorough and extract everything you can see
+ SPECIAL INSTRUCTIONS FOR EXPERIENCE:
+- Experience descriptions are CRITICAL - extract them COMPLETELY
+- If you see bullet points (•, -, *), extract ALL of them
+- If you see multi-line descriptions, extract EVERY line
+- Do not cut off experience descriptions - get the full text
+- Look for detailed responsibilities and achievements
+- Include all technical details, metrics, and outcomes
+
+ QUALITY CHECK:
+- Did you extract ALL experience entries visible?
+- Did you get COMPLETE descriptions for each experience?
+- Did you extract ALL skills visible?
+- Is the About section complete?
+- Are there any truncated descriptions?
 
 Return ONLY the JSON object - no explanations or extra text.
 """
@@ -293,7 +324,7 @@ Return ONLY the JSON object - no explanations or extra text.
                     response = self.client.chat.completions.create(
                         model=Config.GPT4O_VISION_MODEL_ID,
                         messages=messages,
-                        max_tokens=2000,
+                        max_tokens=3000,  # Increased from 2000 to capture longer experience descriptions
                         temperature=0.1
                     )
                     break
